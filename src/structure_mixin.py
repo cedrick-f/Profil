@@ -11,6 +11,7 @@
 
 # Modules "python"
 import xml.etree.ElementTree as ET
+from xml.sax.saxutils import quoteattr, escape, unescape
 import os
 
 
@@ -19,85 +20,15 @@ import os
 
 
 ################################################################################
-class XMLMixin:
-
-    def get_elem(self):
-        """ Renvoie la liste des noms des attributs
-            devant figurer dans le fichier de structure
-
-            Par défaut, tous les attributs sauf les attributs privés "_"
-
-            A surcharger pour personnaliser
-        """
-        return [attr for attr in self.__dict__ if attr[0] != "_"]
-
-
-    def to_xml(self):
-        """ Renvoie la branche xml (ET.Element)
-            contenant les attributs à integrer à la structure
-            obtenus par get_elem()
-
-            Fonction récursive si l'attribut est un XMLMixin
-        """
-        branche = ET.Element("tt")
-        for attr in self.get_elem():
-            e = getattr(self, attr)  # Équivalent à self.attr (mais attr est ici un str)
-            if isinstance(e, XMLMixin):
-                branche.append(e.to_xml())
-            elif isinstance(e, str):
-                branche.set(attr, e)
-            ## .....
-
-        return branche
-
-
-    def from_xml(self, branche):
-        """ Modifie la valeur des attributs intégrés à la structure
-            obtenus par get_elem()
-            et enregistrés ddans la branche (ET.Element)
-
-            Fonction récursive si l'attribut est un XMLMixin
-        """
-        pass
-
-
-    def sauve(self, nom_fichier):
-        tree = ET.ElementTree(self.to_xml())
-        tree.write(nom_fichier, encoding = "utf-8", xml_declaration = True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class XMLMixin():
     """ Classe Mixin pour permettre l'enregistrement et la restauration des objets
         au format XML
     """
-
-
-
     def __init__(self, code = None):
         super(XMLMixin, self).__init__()
         if code is None:
             code = type(self).__name__
         self._codeXML = code
-
-
-
 
 
     ######################################################################################
@@ -110,7 +41,6 @@ class XMLMixin():
             A surcharger pour personnaliser
         """
         return [attr for attr in self.__dict__ if attr[0] != "_"]
-
 
 
     ######################################################################################
@@ -126,7 +56,7 @@ class XMLMixin():
 
         def sauv(branche, val, nom = None):
             if type(val) == str:
-                branche.set("S_"+nom, val)
+                branche.set("S_"+nom, escape(val))
 
             elif type(val) == int:
                 branche.set("I_"+nom, str(val))
@@ -176,7 +106,7 @@ class XMLMixin():
 
         def lect(branche, nom = ""):
             if nom[:2] == "S_":
-                return str(branche.get(nom)).replace("--", "\n")
+                return unescape(branche.get(nom))
 
             elif nom[:2] == "I_":
                 return int(branche.get(nom))
@@ -312,7 +242,7 @@ if __name__ == "__main__":
     base = "C:\\Users\\Cedrick\\Documents\\Developp\\Profil"
     test = Test()
     test.attr1 = 2
-    test.attr2 = "bingo !"
+    test.attr2 = "bin\ngo !"
     #print(test.get_elem())
     #print(vars(test))
 
@@ -323,3 +253,4 @@ if __name__ == "__main__":
     print(vars(test2))
     test2.restaurer(os.path.join(base, "text.xml"))
     print(vars(test2))
+    print(test2.attr2)
