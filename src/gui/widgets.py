@@ -1,4 +1,5 @@
 from src.messages import msg
+from src.archive import ArchiveManager
 from tkinter import Button, Checkbutton, Entry, Frame, StringVar
 from tkinter.filedialog import askdirectory
 from typing import List
@@ -38,9 +39,10 @@ class ConfigWidget(Frame):
 class WorkplaceWidget(Frame):
     """Interface pour choisir le répertoire de sauvegarde."""
 
-    def __init__(self, parent: Frame):
+    def __init__(self, parent: Frame, manager: ArchiveManager):
         Frame.__init__(self, parent)
         self.folder_path = StringVar()
+        self.folder_path.set(manager.dossier)
         self.entry = Entry(self, textvariable=self.folder_path)
         self.entry.grid(row=0, column=1)
         self.browse_btn = Button(self, text=msg.get('browse'), command=self.handle_browse_click)
