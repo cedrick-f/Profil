@@ -14,6 +14,7 @@ import os
 import shutil
 import glob
 
+
 # Modules "application"
 from structure_mixin import *
 
