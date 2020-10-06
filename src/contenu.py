@@ -16,7 +16,7 @@ import glob
 
 
 # Modules "application"
-from structure_mixin import *
+from structure import *
 
 ################################################################################
 class ProfilGroup(XMLMixin):
