@@ -12,7 +12,7 @@
 # Modules "python"
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import quoteattr, escape, unescape
-import os
+import os, sys
 
 
 # Modules "application"
@@ -31,7 +31,7 @@ class XMLMixin():
         self._codeXML = code
 
 
-    ######################################################################################
+    ############################################################################
     def get_elem(self):
         """ Renvoie la liste des noms des attributs
             devant figurer dans le fichier de structure
@@ -43,7 +43,7 @@ class XMLMixin():
         return [attr for attr in self.__dict__ if attr[0] != "_"]
 
 
-    ######################################################################################
+    ############################################################################
     def to_xml(self):
         """ Renvoie la branche xml (ET.Element)
             contenant les attributs à integrer à la structure
@@ -80,7 +80,7 @@ class XMLMixin():
                     sauv(sub, sv, k)
 
             elif isinstance(val, XMLMixin):
-                branche.append(val.to_xml(nom))
+                branche.append(val.to_xml())
 
 
         for attr in self.get_elem():
@@ -92,8 +92,8 @@ class XMLMixin():
 
 
 
-    ######################################################################################
-    def from_xml(self, branche, module = ""):
+    ############################################################################
+    def from_xml(self, branche):
         """ Modifie la valeur des attributs intégrés à la structure
             obtenus par get_elem()
             et enregistrés ddans la branche (ET.Element)
@@ -159,7 +159,7 @@ class XMLMixin():
 
             else:
                 sbranche = branche.find(nom)
-                classe = get_class(nom.split("_")[0], module = module)
+                classe = getattr(sys.modules[__name__], nom.split("_")[0])
                 obj, err = classe().from_xml(sbranche)
                 nomerr.extend(err)
                 return obj
@@ -197,14 +197,14 @@ class XMLMixin():
 
 
 
-    ######################################################################################
+    ############################################################################
     def sauver(self, nom_fichier):
         tree = ET.ElementTree(self.to_xml())
         tree.write(nom_fichier, encoding = "utf-8", xml_declaration = True)
 
 
 
-    ######################################################################################
+    ############################################################################
     def restaurer(self, nom_fichier):
         tree = ET.parse(nom_fichier)
         self.from_xml(tree.getroot())
@@ -212,20 +212,6 @@ class XMLMixin():
 
 
 
-
-
-def get_class( kls ,module = ""):
-    parts = kls.split('.')
-    if module == "":
-        module = ".".join(parts[:-1])
-        parts = parts[1:]
-
-#     print("  ", parts)
-
-    m = __import__( module )
-    for comp in parts:
-        m = getattr(m, comp)
-    return m
 
 
 ################################################################################
@@ -236,7 +222,14 @@ if __name__ == "__main__":
             self.attr1 = 1
             self.attr2 = "coucou"
             self._attr3 = "NON"
-            #self.attr_4 = Test()
+            self.attr_4 = ssTest()
+
+    class ssTest(XMLMixin):
+        def __init__(self):
+            super(ssTest, self).__init__()
+            self.attr01 = 100
+            self.attr02 = "hello <>"
+
 
 
     base = "C:\\Users\\Cedrick\\Documents\\Developp\\Profil"
