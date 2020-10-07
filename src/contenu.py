@@ -14,8 +14,9 @@ import os
 import shutil
 import glob
 
+
 # Modules "application"
-from structure_mixin import *
+from structure import *
 
 ################################################################################
 class ProfilGroup(XMLMixin):
@@ -25,7 +26,7 @@ class ProfilGroup(XMLMixin):
 
 
     def add_elem(self, path = None, mode = 0):
-        self.lst_elem.append(path, mode)
+        self.lst_elem.append(ProfilElem(path, mode))
 
     def sauver(self, dest):
         for e in self.lst_elem:
@@ -97,10 +98,21 @@ class ProfilElem(XMLMixin):
 
 
 ################################################################################
+# Constantes "application"
+__FF = ProfilGroup("FireFox")
+__FF.add_elem(os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles'), 1)
+
+__BUR = ProfilGroup("FireFox")
+__BUR.add_elem("C:\\Users\\"+os.environ['USERNAME']+".TLPU664\\Desktop", 1)
+
+PROFILS = {"FireFox" : __FF,
+            "Bureau" : __BUR}
+
+################################################################################
+
 if __name__ == "__main__":
-    base = "C:\\Users\\Cedrick\\Documents\\Developp\\Profil\\Test"
+    base = "C:\\Users\\"+os.environ['USERNAME']+".TLPU664\\Desktop"
     pp = os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
     print(pp)
     print(os.listdir(pp))
     e = ProfilElem(pp, 1)
-    print(e.sauver(base))
