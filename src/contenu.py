@@ -32,7 +32,8 @@ class ProfilGroup(XMLMixin):
         for e in self.lst_elem:
             e.sauver(dest)
 
-
+    def __repr__(self):
+        return str(self.lst_elem)
 
 ################################################################################
 class ProfilElem(XMLMixin):
@@ -46,7 +47,9 @@ class ProfilElem(XMLMixin):
         #  2 = linux-like
         #  3 = linux-like + recursif
         self.mode = mode
-
+    
+    def __repr__(self):
+        return self.path + ", " + str(self.mode)
 
     ############################################################################
     def sauver(self, dest):
@@ -103,7 +106,7 @@ __FF = ProfilGroup("FireFox")
 __FF.add_elem(os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles'), 1)
 
 __BUR = ProfilGroup("FireFox")
-__BUR.add_elem("C:\\Users\\"+os.environ['USERNAME']+".TLPU664\\Desktop", 1)
+__BUR.add_elem("C:\\Users\\"+os.environ['USERNAME']+".TLPU664\\Desktop\\*lnk*", 1)
 
 PROFILS = {"FireFox" : __FF,
             "Bureau" : __BUR}
