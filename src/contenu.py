@@ -20,24 +20,29 @@ from structure import *
 
 ################################################################################
 class ProfilGroup(XMLMixin):
-    def __init__(self, nom = ""):
+    """Un groupe de fichier 'profil' à sauvegarder."""
+    
+    def __init__(self, nom: str = ""):
         self.nom = nom
-        self.lst_elem = []
+        self.lst_elem: List[ProfilElem] = []
 
 
-    def add_elem(self, path = None, mode = 0):
+    def add_elem(self, path: Optional[str] = None, mode: int = 0):
         self.lst_elem.append(ProfilElem(path, mode))
 
-    def sauver(self, dest):
+    def sauver(self, dest: str):
         for e in self.lst_elem:
             e.sauver(dest)
 
-    def __repr__(self):
-        return str(self.lst_elem)
+    def __repr__(self) -> str:
+        return "ProfilGroup[" + str(self.lst_elem) + "]"
+
 
 ################################################################################
 class ProfilElem(XMLMixin):
-    def __init__(self, path = None, mode = 0):
+    """Un élément d'un profil à sauvegarder (fichier ou dossier)."""
+    
+    def __init__(self, path: Optional[str] = None, mode: int = 0):
 
         self.path = path
 
@@ -46,20 +51,22 @@ class ProfilElem(XMLMixin):
         #  1 = dossier complet
         #  2 = linux-like
         #  3 = linux-like + recursif
+        assert 0 <= mode <= 3, "Le mode de copie '%s' n'existe pas." % mode
         self.mode = mode
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.path + ", " + str(self.mode)
 
     ############################################################################
-    def sauver(self, dest):
-        """ Copie les fichiers du contenu vers le dossier dest
+    def sauver(self, dest: str) -> List[str]:
+        """Copie les fichiers du contenu vers le dossier de destination.
 
-            FileExistsError si dest existe déjà
-
-            Renvoie la liste des fichiers qui n'ont pas été copiés
+        :param dest: Dossier de destination
+        :return: Renvoie la liste des fichiers qui n'ont pas été copiés
+        :raises:
+            FileExistsError: si dest existe déjà
         """
-        fail = []
+        fai: List[str] = []
         if self.mode == 0:
             shutil.copy2(self.path, dest)
 
@@ -80,11 +87,11 @@ class ProfilElem(XMLMixin):
         return fail
 
     ############################################################################
-    def restaurer(self, source):
+    def restaurer(self, source: str) -> List[str]:
         """ Restaure les fichiers du dossier source vers le dossier d'origine
             Renvoie la liste des fichiers qui n'ont pas été copiés
         """
-        fail = []
+        fail: List[str] = []
         try:
             shutil.copytree(source, self.path)
         except shutil.Error as exc:

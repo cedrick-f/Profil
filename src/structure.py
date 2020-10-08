@@ -10,6 +10,7 @@
 ################################################################################
 
 # Modules "python"
+from typing import Any, List, Optional, Type
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import quoteattr, escape, unescape
 import os, sys
@@ -20,19 +21,18 @@ import os, sys
 
 
 ################################################################################
-class XMLMixin():
+class XMLMixin:
     """ Classe Mixin pour permettre l'enregistrement et la restauration des objets
         au format XML
     """
-    def __init__(self, code = None):
-        super(XMLMixin, self).__init__()
+    def __init__(self, code: Optional[Type['XMLMixin']] = None):
         if code is None:
             code = type(self).__name__
         self._codeXML = code
 
 
     ############################################################################
-    def get_elem(self):
+    def get_elem(self) -> List[str]:
         """ Renvoie la liste des noms des attributs
             devant figurer dans le fichier de structure
 
@@ -54,7 +54,7 @@ class XMLMixin():
 
         ref = ET.Element(self._codeXML)
 
-        def sauv(branche, val, nom = None):
+        def sauv(branche: ET.Element, val: Any, nom: Optional[str] = None):
             if type(val) == str:
                 branche.set("S_"+nom, escape(val))
 
@@ -93,7 +93,7 @@ class XMLMixin():
 
 
     ############################################################################
-    def from_xml(self, branche):
+    def from_xml(self, branche: ET.Element):
         """ Modifie la valeur des attributs intégrés à la structure
             obtenus par get_elem()
             et enregistrés ddans la branche (ET.Element)
@@ -102,9 +102,9 @@ class XMLMixin():
         """
 
 
-        nomerr = []
+        nomerr: List[str] = []
 
-        def lect(branche, nom = ""):
+        def lect(branche: ET.Element, nom: str = ""):
             if nom[:2] == "S_":
                 return unescape(branche.get(nom))
 
@@ -120,7 +120,8 @@ class XMLMixin():
 
             elif nom[:2] == "l_":
                 sbranche = branche.find(nom)
-                if sbranche == None: return []
+                if sbranche is None:
+                    return []
                 dic = {}
 
                 # éléments "simples" : dans les items
@@ -189,7 +190,7 @@ class XMLMixin():
             else:
                 _attr = None
 
-            if _attr != None:
+            if _attr is not None:
                 v = lect(branche, _attr)
                 setattr(self, attr, v)
 
@@ -198,14 +199,14 @@ class XMLMixin():
 
 
     ############################################################################
-    def sauver(self, nom_fichier):
+    def sauver(self, nom_fichier: str):
         tree = ET.ElementTree(self.to_xml())
         tree.write(nom_fichier, encoding = "utf-8", xml_declaration = True)
 
 
 
     ############################################################################
-    def restaurer(self, nom_fichier):
+    def restaurer(self, nom_fichier: str):
         tree = ET.parse(nom_fichier)
         self.from_xml(tree.getroot())
 
