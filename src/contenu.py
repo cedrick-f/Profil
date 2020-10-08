@@ -30,9 +30,11 @@ class ProfilGroup(XMLMixin):
     def add_elem(self, path: Optional[str] = None, mode: int = 0):
         self.lst_elem.append(ProfilElem(path, mode))
 
-    def sauver(self, dest: str):
+    def sauver(self, dest: str) -> List[str]:
+        fail: List[str] = []
         for e in self.lst_elem:
-            e.sauver(dest)
+            fail.append(e.sauver(dest))
+        return fail
 
     def __repr__(self) -> str:
         return "ProfilGroup[" + str(self.lst_elem) + "]"
@@ -66,12 +68,13 @@ class ProfilElem(XMLMixin):
         :raises:
             FileExistsError: si dest existe déjà
         """
-        fai: List[str] = []
+        fail: List[str] = []
         if self.mode == 0:
             shutil.copy2(self.path, dest)
 
         elif self.mode == 1:
             try:
+                shutil.rmtree(dest)
                 shutil.copytree(self.path, dest)    # py3.8 : , dirs_exist_ok = True)
             except shutil.Error as exc:
                 errors = exc.args[0]
