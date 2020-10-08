@@ -113,13 +113,16 @@ class ProfilElem(XMLMixin):
 
 ################################################################################
 # Constantes "application"
-__FF = ProfilGroup("FireFox")
-__FF.add_elem(os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles'), 1)
+__FFr = ProfilGroup("FireFoxR")
+__FFr.add_elem(os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles'), 1)
+
+__FFl = ProfilGroup("FireFoxL")
+__FFl.add_elem(os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local'), 1)
 
 __BUR = ProfilGroup("Bureau")
 __BUR.add_elem(os.path.join(os.environ['USERPROFILE'], ".TLPU664\\Desktop\\*lnk*"), 2)
 
-PROFILS = {"FireFox" : __FF,
+PROFILS = {"FireFox" : __FFr,
             "Bureau" : __BUR}
 
 ################################################################################
