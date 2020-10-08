@@ -22,7 +22,7 @@ from structure import *
 ################################################################################
 class ProfilGroup(XMLMixin):
     """Un groupe de fichier 'profil' à sauvegarder."""
-    
+
     def __init__(self, nom: str = ""):
         self.nom = nom
         self.lst_elem: List[ProfilElem] = []
@@ -44,7 +44,7 @@ class ProfilGroup(XMLMixin):
 ################################################################################
 class ProfilElem(XMLMixin):
     """Un élément d'un profil à sauvegarder (fichier ou dossier)."""
-    
+
     def __init__(self, path: Optional[str] = None, mode: int = 0):
 
         self.path = path
@@ -56,7 +56,7 @@ class ProfilElem(XMLMixin):
         #  3 = linux-like + recursif
         assert 0 <= mode <= 3, "Le mode de copie '%s' n'existe pas." % mode
         self.mode = mode
-    
+
     def __repr__(self) -> str:
         return self.path + ", " + str(self.mode)
 
@@ -113,16 +113,14 @@ class ProfilElem(XMLMixin):
 
 ################################################################################
 # Constantes "application"
-__FFr = ProfilGroup("FireFoxR")
-__FFr.add_elem(os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles'), 1)
-
-__FFl = ProfilGroup("FireFoxL")
-__FFl.add_elem(os.environ['LOCALAPPDATA'], 1)
+__FF = ProfilGroup("FireFox")
+__FF.add_elem(os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles'), 1)
+__FF.add_elem(os.path.join(os.environ['LOCALAPPDATA'], 'Mozilla','Firefox','Profiles'), 1)
 
 __BUR = ProfilGroup("Bureau")
 __BUR.add_elem(os.path.join(os.environ['USERPROFILE'], ".TLPU664\\Desktop\\*lnk*"), 2)
 
-PROFILS = {"FireFox" : __FFr,
+PROFILS = {"FireFox" : __FF,
             "Bureau" : __BUR}
 
 ################################################################################
