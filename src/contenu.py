@@ -118,7 +118,7 @@ __FF.add_elem(os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
 __FF.add_elem(os.path.join(os.environ['LOCALAPPDATA'], 'Mozilla','Firefox','Profiles'), 1)
 
 __BUR = ProfilGroup("Bureau")
-__BUR.add_elem(os.path.join(os.environ['USERPROFILE'], ".TLPU664\\Desktop\\*lnk*"), 2)
+__BUR.add_elem(os.path.join(os.environ['USERPROFILE'], "Desktop\\*lnk*"), 2)
 
 PROFILS = {"FireFox" : __FF,
             "Bureau" : __BUR}
@@ -126,7 +126,7 @@ PROFILS = {"FireFox" : __FF,
 ################################################################################
 
 if __name__ == "__main__":
-    base = os.path.join(os.environ['USERPROFILE'], ".TLPU664\\Desktop\\*lnk*")
+    base = os.path.join(os.environ['USERPROFILE'], "Desktop\\*lnk*")
     pp = os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
     print(pp)
     print(os.listdir(pp))
