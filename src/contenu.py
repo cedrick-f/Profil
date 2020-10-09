@@ -33,9 +33,9 @@ class ProfilGroup(XMLMixin):
         self.lst_elem.append(ProfilElem(path, mode))
 
     def sauver(self, dest: str) -> List[str]:
-        fail: List[str] = []
+        fail: List[List[str]] = []
         for e in self.lst_elem:
-            fail.append(*e.sauver(dest))
+            fail.append(e.sauver(dest))
         return fail
 
     def __repr__(self) -> str:
