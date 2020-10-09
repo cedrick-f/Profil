@@ -1,23 +1,32 @@
-from src.messages import msg
-from src.archive import ArchiveManager
-from tkinter import Button, Checkbutton, Entry, Frame, StringVar
+from contenu import ProfilGroup, PROFILS
+from messages import msg
+from archive import ArchiveManager
+from tkinter import Button, Checkbutton, Entry, Frame, StringVar, BooleanVar, Label
 from tkinter.filedialog import askdirectory
-from typing import List
+from typing import Dict, Callable
 
 
 class ActionWidget(Frame):
     """Interface pour les actions de sauvegarde et de restoration."""
 
-    def __init__(self, parent: Frame):
+    def __init__(self, parent: Frame, save_fn: Callable[[], None]):
         Frame.__init__(self, parent)
+        self.save_fn = save_fn
         self.save_btn = Button(self, text=msg.get('save'), command=self.handle_save_click)
         self.save_btn.grid(row=0, column=1)
         self.restore_btn = Button(self, text=msg.get('restore'), command=self.handle_restore_click)
         self.restore_btn.grid(row=0, column=3)
+        self.label = Label()
+        self.label.pack()
         self.pack()
 
+    def update_status(self, running: bool, text: str):
+        for button in (self.save_btn, self.restore_btn):
+            button['state'] = 'disabled' if running else 'normal'
+        self.label['text'] = text
+
     def handle_save_click(self):
-        print(msg.get('save'))  # TODO
+        self.save_fn()
 
     def handle_restore_click(self):
         print(msg.get('restore'))  # TODO
@@ -28,12 +37,20 @@ class ConfigWidget(Frame):
 
     def __init__(self, parent: Frame):
         Frame.__init__(self, parent)
-        self.checkboxes: List[Checkbutton] = []
-        for application in ['firefox', 'icônes']:  # TODO
-            checkbutton = Checkbutton(self, text=application)
-            self.checkboxes.append(checkbutton)
+        self.bool_vars: Dict[str, BooleanVar] = {}
+        for application in PROFILS.keys():
+            bool_var = BooleanVar()
+            checkbutton = Checkbutton(self, text=application, variable=bool_var)
+            self.bool_vars[application] = bool_var
             checkbutton.pack()
         self.pack()
+
+    def get_config(self) -> Dict[str, ProfilGroup]:
+        profils: Dict[str, ProfilGroup] = {}
+        for key, var in self.bool_vars.items():
+            if var.get():
+                profils[key] = PROFILS.get(key)
+        return profils
 
 
 class WorkplaceWidget(Frame):
@@ -41,8 +58,7 @@ class WorkplaceWidget(Frame):
 
     def __init__(self, parent: Frame, manager: ArchiveManager):
         Frame.__init__(self, parent)
-        self.folder_path = StringVar()
-        self.folder_path.set(manager.dossier)
+        self.folder_path = StringVar(value=manager.dossier)
         self.entry = Entry(self, textvariable=self.folder_path)
         self.entry.grid(row=0, column=1)
         self.browse_btn = Button(self, text=msg.get('browse'), command=self.handle_browse_click)

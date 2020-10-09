@@ -24,6 +24,7 @@ class ProfilGroup(XMLMixin):
     """Un groupe de fichier 'profil' à sauvegarder."""
 
     def __init__(self, nom: str = ""):
+        super().__init__(self)
         self.nom = nom
         self.lst_elem: List[ProfilElem] = []
 
@@ -34,7 +35,7 @@ class ProfilGroup(XMLMixin):
     def sauver(self, dest: str) -> List[str]:
         fail: List[str] = []
         for e in self.lst_elem:
-            fail.append(e.sauver(dest))
+            fail.append(*e.sauver(dest))
         return fail
 
     def __repr__(self) -> str:
@@ -46,7 +47,7 @@ class ProfilElem(XMLMixin):
     """Un élément d'un profil à sauvegarder (fichier ou dossier)."""
 
     def __init__(self, path: Optional[str] = None, mode: int = 0):
-
+        super().__init__(self)
         self.path = path
 
         # Mode de copie :

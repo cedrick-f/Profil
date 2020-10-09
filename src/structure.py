@@ -199,14 +199,14 @@ class XMLMixin:
 
 
     ############################################################################
-    def sauver(self, nom_fichier: str):
+    def sauver_xml(self, nom_fichier: str):
         tree = ET.ElementTree(self.to_xml())
         tree.write(nom_fichier, encoding = "utf-8", xml_declaration = True)
 
 
 
     ############################################################################
-    def restaurer(self, nom_fichier: str):
+    def restaurer_xml(self, nom_fichier: str):
         tree = ET.parse(nom_fichier)
         self.from_xml(tree.getroot())
 
@@ -241,10 +241,10 @@ if __name__ == "__main__":
     #print(vars(test))
 
 
-    test.sauver(os.path.join(base, "text.xml"))
+    test.sauver_xml(os.path.join(base, "text.xml"))
 
     test2 = Test()
     print(vars(test2))
-    test2.restaurer(os.path.join(base, "text.xml"))
+    test2.restaurer_xml(os.path.join(base, "text.xml"))
     print(vars(test2))
     print(test2.attr2)
