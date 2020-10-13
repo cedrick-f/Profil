@@ -58,8 +58,8 @@ if __name__ == "__main__":
     a = ArchiveManager()
     #doss = "U:\\marthe.vandenberg\\J'en ai ras le cul"
 
-    src_path = "U:\\marthe.vandenberg\\Dossier_test"
+    path = "U:\\marthe.vandenberg\\Dossier_test"
     
-
-    a.to_zip(src_path, os.path.join("U:\\marthe.vandenberg", ZIP_FILE_DEFAUT))
-    #a.from_zip(doss, os.path.join(ZIP_PATH_DEFAUT, ZIP_FILE_DEFAUT))
+    fzip = os.path.join("U:\\marthe.vandenberg", ZIP_FILE_DEFAUT)
+    #a.to_zip(path, fzip)
+    a.from_zip(fzip, path)
