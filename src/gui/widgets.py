@@ -9,9 +9,10 @@ from typing import Dict, Callable
 class ActionWidget(Frame):
     """Interface pour les actions de sauvegarde et de restoration."""
 
-    def __init__(self, parent: Frame, save_fn: Callable[[], None]):
+    def __init__(self, parent: Frame, save_fn: Callable[[], None], restore_fn: Callable[[], None]):
         Frame.__init__(self, parent)
         self.save_fn = save_fn
+        self.restore_fn = restore_fn
         self.save_btn = Button(self, text=msg.get('save'), command=self.handle_save_click)
         self.save_btn.grid(row=0, column=1)
         self.restore_btn = Button(self, text=msg.get('restore'), command=self.handle_restore_click)
@@ -29,7 +30,7 @@ class ActionWidget(Frame):
         self.save_fn()
 
     def handle_restore_click(self):
-        print(msg.get('restore'))  # TODO
+        self.restore_fn()
 
 
 class ConfigWidget(Frame):
@@ -58,6 +59,7 @@ class WorkplaceWidget(Frame):
 
     def __init__(self, parent: Frame, manager: ArchiveManager):
         Frame.__init__(self, parent)
+        self.manager = manager
         self.folder_path = StringVar(value=manager.dossier)
         self.entry = Entry(self, textvariable=self.folder_path)
         self.entry.grid(row=0, column=1)
@@ -66,4 +68,5 @@ class WorkplaceWidget(Frame):
         self.pack()
 
     def handle_browse_click(self):
-        self.folder_path.set(askdirectory())
+        directory = self.manager.set_dossier(askdirectory())
+        self.folder_path.set(directory)

@@ -1,4 +1,4 @@
-from save_process import SaveProcess
+from save_process import RestoreProcess, SaveProcess
 from messages import msg
 from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget
 from tkinter import Frame, Tk
@@ -11,7 +11,7 @@ class Application(Frame):
     def __init__(self, master: Tk):
         super().__init__(master)
         self.manager = ArchiveManager()
-        self.actions = ActionWidget(self, self.handle_save)
+        self.actions = ActionWidget(self, self.handle_save, self.handle_restore)
         self.actions.pack()
         self.workplace = WorkplaceWidget(self, self.manager)
         self.workplace.pack()
@@ -21,7 +21,12 @@ class Application(Frame):
         self.pack()
 
     def handle_save(self):
-        self.process = SaveProcess(self.config.get_config())
+        self.process = SaveProcess(self.manager, self.config.get_config())
+        self.process.start()
+        self.update_status()
+
+    def handle_restore(self):
+        self.process = RestoreProcess(self.manager, self.config.get_config())
         self.process.start()
         self.update_status()
 
