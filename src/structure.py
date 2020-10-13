@@ -26,10 +26,10 @@ class XMLMixin:
         au format XML
     """
     def __init__(self, code = None):#: Optional[Type['XMLMixin']]
-        print("__init__XMLMixin :", code)
+        #print("__init__XMLMixin :", code)
         if code is None:
             code = self.__class__.__name__
-            print(type(code))
+            #print(type(code))
         self._codeXML = code
         #
         super(XMLMixin, self).__init__()
@@ -56,7 +56,7 @@ class XMLMixin:
 
             Fonction récursive si l'attribut est un XMLMixin
         """
-        print('to_xml', self._codeXML)
+        #print('to_xml', self._codeXML)
 
         ref = ET.Element(self._codeXML)
 
@@ -90,7 +90,6 @@ class XMLMixin:
             elif isinstance(val, XMLMixin):
                 branche.append(val.to_xml())
 
-            print(">>>\n", ET.tostring(branche))
 
         for attr in self.get_elem():
             val = getattr(self, attr)
@@ -109,7 +108,6 @@ class XMLMixin:
 
             Fonction récursive si l'attribut est un XMLMixin
         """
-
 
         nomerr: List[str] = []
 
