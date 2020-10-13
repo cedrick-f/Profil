@@ -25,10 +25,15 @@ class XMLMixin:
     """ Classe Mixin pour permettre l'enregistrement et la restauration des objets
         au format XML
     """
-    def __init__(self, code: Optional[Type['XMLMixin']] = None):
+    def __init__(self, code = None):#: Optional[Type['XMLMixin']]
+        print("__init__XMLMixin :", code)
         if code is None:
-            code = type(self).__name__
+            code = self.__class__.__name__
+            print(type(code))
         self._codeXML = code
+        #
+        super(XMLMixin, self).__init__()
+
 
 
     ############################################################################
@@ -51,11 +56,14 @@ class XMLMixin:
 
             Fonction récursive si l'attribut est un XMLMixin
         """
+        print('to_xml', self._codeXML)
 
         ref = ET.Element(self._codeXML)
 
         def sauv(branche: ET.Element, val: Any, nom: Optional[str] = None):
+            print("   ", nom, type(val))
             if type(val) == str:
+                print('!!!', ("S_"+nom, escape(val)))
                 branche.set("S_"+nom, escape(val))
 
             elif type(val) == int:
@@ -82,6 +90,7 @@ class XMLMixin:
             elif isinstance(val, XMLMixin):
                 branche.append(val.to_xml())
 
+            print(">>>\n", ET.tostring(branche))
 
         for attr in self.get_elem():
             val = getattr(self, attr)
@@ -248,3 +257,9 @@ if __name__ == "__main__":
     test2.restaurer_xml(os.path.join(base, "text.xml"))
     print(vars(test2))
     print(test2.attr2)
+
+    # from contenu import *
+    #
+    # pp = os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
+    # print(pp)
+    # contenu.__FF.sauver_xml(os.path.join(base, "text.xml"))

@@ -24,7 +24,7 @@ class ProfilGroup(XMLMixin):
     """Un groupe de fichier 'profil' à sauvegarder."""
 
     def __init__(self, nom: str = ""):
-        super().__init__(self)
+        super(ProfilGroup, self).__init__()
         self.nom = nom
         self.lst_elem: List[ProfilElem] = []
 
@@ -47,7 +47,8 @@ class ProfilElem(XMLMixin):
     """Un élément d'un profil à sauvegarder (fichier ou dossier)."""
 
     def __init__(self, path: Optional[str] = None, mode: int = 0):
-        super().__init__(self)
+        super(ProfilElem, self).__init__()
+
         self.path = path
 
         # Mode de copie :
@@ -57,6 +58,8 @@ class ProfilElem(XMLMixin):
         #  3 = linux-like + recursif
         assert 0 <= mode <= 3, "Le mode de copie '%s' n'existe pas." % mode
         self.mode = mode
+
+
 
     def __repr__(self) -> str:
         return self.path + ", " + str(self.mode)
@@ -119,7 +122,7 @@ __FF.add_elem(os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
 __FF.add_elem(os.path.join(os.environ['LOCALAPPDATA'], 'Mozilla','Firefox','Profiles'), 1)
 
 __BUR = ProfilGroup("Bureau")
-__BUR.add_elem(os.path.join(os.environ['USERPROFILE'], "Desktop\\*lnk*"), 2)
+__BUR.add_elem(os.path.join(os.environ['USERPROFILE'], "Desktop","*.lnk"), 2)
 
 PROFILS = {"FireFox" : __FF,
             "Bureau" : __BUR}
@@ -127,8 +130,13 @@ PROFILS = {"FireFox" : __FF,
 ################################################################################
 
 if __name__ == "__main__":
-    base = os.path.join(os.environ['USERPROFILE'], "Desktop\\*lnk*")
-    pp = os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
-    print(pp)
-    print(os.listdir(pp))
-    e = ProfilElem(pp, 1)
+    # base = os.path.join(os.environ['USERPROFILE'], "Desktop\\*lnk*")
+    # pp = os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
+    # print(pp)
+    # print(os.listdir(pp))
+    # e = ProfilElem(pp, 1)
+
+    base = "C:\\Users\\Cedrick\\Documents\\Developp\\Profil"
+    # pp = os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
+    # print(pp)
+    __FF.sauver_xml(os.path.join(base, "text.xml"))
