@@ -43,7 +43,7 @@ class Application(Frame):
 
 
     def handle_restore(self):
-        self.profilConfig.set_grps(self.config.get_config())
+        self.profilConfig.set_grps(self.config.get_config()) ## ne sert à rien ... à revoir
         self.process = RestoreProcess(self.manager, self.profilConfig)
         self.process.start()
         self.update_status()

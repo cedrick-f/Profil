@@ -1,8 +1,25 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+################################################################################
+#
+#
+#   module : widgets
+#
+#
+################################################################################
+
 import glob
 import os
 import zipfile
 from os.path import exists, expanduser, getmtime, splitext
 from typing import Optional
+from win32com.shell import shell, shellcon
+
+def get_path_mesdocuments():
+    #return os.path.join("U:", os.environ['USERNAME'], 'Mes documents')
+    return shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL, None, 0)
+
 
 
 class ArchiveManager:
@@ -28,7 +45,7 @@ class ArchiveManager:
 
     def get_dossier_perso(self) -> str:
         """Récupère le dossier personnel d'un utilisateur."""
-        path = os.path.join("U:", os.environ['USERNAME'], 'Mes documents')
+        path = get_path_mesdocuments()
         if exists(path):
             return path
         return expanduser('~')

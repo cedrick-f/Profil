@@ -28,20 +28,22 @@ class ProfilConfig(XMLMixin):
         self.date = ""
         self.lst_grp = list(PROFILS.values())
 
+    ############################################################################
     def __repr__(self) -> str:
         return "ProfilConfig :\n\t" + "\n\t".join(g.__repr__() for g in self.lst_grp)
     
-    
+    ############################################################################
     def set_grps(self, lst_grp):
         self.lst_grp = []
         for g in lst_grp:
             self.add_grp(g)
             
+    ############################################################################
     def add_grp(self, nom):
         if nom in PROFILS and not PROFILS[nom] in self.lst_grp:
             self.lst_grp.append(PROFILS[nom])
         
-        
+    ############################################################################
     def rmv_grp(self, nom):
         if PROFILS[nom] in self.lst_grp:
             self.lst_grp.remove(PROFILS[nom])
@@ -79,7 +81,11 @@ class ProfilGroup(XMLMixin):
         self.nom = nom
         self.lst_elem: List[ProfilElem] = []
 
+    ############################################################################
+    def __repr__(self) -> str:
+        return "ProfilGroup :\n\t\t" + "\n\t\t".join(e.__repr__() for e in self.lst_elem)
 
+    ############################################################################
     def add_elem(self, path: Optional[str] = None, mode: int = 0):
         self.lst_elem.append(ProfilElem(path, mode))
 
@@ -100,9 +106,7 @@ class ProfilGroup(XMLMixin):
             fail.append(e.restaurer(source))
         return fail
         
-    def __repr__(self) -> str:
-        return "ProfilGroup :\n\t\t" + "\n\t\t".join(e.__repr__() for e in self.lst_elem)
-
+    
 
 
 ################################################################################
@@ -124,6 +128,7 @@ class ProfilElem(XMLMixin):
 
 
 
+    ############################################################################
     def __repr__(self) -> str:
         return "ProfilElem : "+ self.path + " (mode " + str(self.mode)+")"
 
