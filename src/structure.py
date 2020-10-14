@@ -61,9 +61,9 @@ class XMLMixin:
         ref = ET.Element(self._codeXML)
 
         def sauv(branche: ET.Element, val: Any, nom: Optional[str] = None):
-            print("   ", nom, type(val))
+            #print("   ", nom, type(val))
             if type(val) == str:
-                print('!!!', ("S_"+nom, escape(val)))
+                #print('!!!', ("S_"+nom, escape(val)))
                 branche.set("S_"+nom, escape(val))
 
             elif type(val) == int:
@@ -167,7 +167,8 @@ class XMLMixin:
 
             else:
                 sbranche = branche.find(nom)
-                classe = getattr(sys.modules[__name__], nom.split("_")[0])
+                #classe = getattr(sys.modules[__name__], nom.split("_")[0])
+                classe = get_class(nom.split("_")[0], "contenu")
                 obj, err = classe().from_xml(sbranche)
                 nomerr.extend(err)
                 return obj
@@ -219,6 +220,18 @@ class XMLMixin:
 
 
 
+def get_class( kls ,module = "" ):
+    """ Renvoie l'objet class de nom kls
+        depuis le module spécifié
+    """
+    parts = kls.split('.')
+    if module == "":
+        module = ".".join(parts[:-1])
+        parts = parts[1:]
+    m = __import__( module )
+    for comp in parts:
+        m = getattr(m, comp)            
+    return m
 
 
 

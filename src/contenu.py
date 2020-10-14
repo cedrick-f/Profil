@@ -26,32 +26,47 @@ class ProfilConfig(XMLMixin):
         super(ProfilConfig, self).__init__()
         self.nom = nom
         self.date = ""
-        self._lst_grp: List[str] = list(PROFILS.keys())
+        self.lst_grp = list(PROFILS.values())
 
+    def __repr__(self) -> str:
+        return "ProfilConfig :\n\t" + "\n\t".join(g.__repr__() for g in self.lst_grp)
+    
+    
     def set_grps(self, lst_grp):
-        self._lst_grp = []
+        self.lst_grp = []
         for g in lst_grp:
             self.add_grp(g)
             
     def add_grp(self, nom):
-        if nom in PROFILS and not nom in self._lst_grp:
-            self._lst_grp.append(nom)
+        if nom in PROFILS and not PROFILS[nom] in self.lst_grp:
+            self.lst_grp.append(PROFILS[nom])
         
         
     def rmv_grp(self, nom):
-        if nom in self._lst_grp:
-            self._lst_grp.remove(nom)
+        if PROFILS[nom] in self.lst_grp:
+            self.lst_grp.remove(PROFILS[nom])
         
+    ############################################################################
     def sauver(self, dest: str) -> List[str]:
         fail: List[List[str]] = []
         self.date = datetime.datetime.now().strftime('%m/%d/%Y')
-        self.lst_grp = [PROFILS[n] for n in self._lst_grp]
-        for n, g in [(n, PROFILS[n]) for n in self._lst_grp]:
-            subfolder = os.path.join(dest, n)
+        
+        for g in self.lst_grp:
+            subfolder = os.path.join(dest, g.nom)
             os.makedirs(subfolder)
-            print("   ", n, "-->", subfolder)
+            print("   ", g.nom, "-->", subfolder)
             fail.append(g.sauver(subfolder))
         print(fail)
+        return fail
+    
+    ############################################################################
+    def restaurer(self, source: str) -> List[str]:
+        """ Restaure les fichiers du dossier source vers le dossier d'origine
+            Renvoie la liste des fichiers qui n'ont pas été copiés
+        """
+        fail: List[List[str]] = []
+        for e in self.lst_grp:
+            fail.append(e.restaurer(source))
         return fail
 
 
@@ -68,21 +83,33 @@ class ProfilGroup(XMLMixin):
     def add_elem(self, path: Optional[str] = None, mode: int = 0):
         self.lst_elem.append(ProfilElem(path, mode))
 
+    ############################################################################
     def sauver(self, dest: str) -> List[str]:
         fail: List[List[str]] = []
         for e in self.lst_elem:
             fail.append(e.sauver(dest))
         return fail
 
+    ############################################################################
+    def restaurer(self, source: str) -> List[str]:
+        """ Restaure les fichiers du dossier source vers le dossier d'origine
+            Renvoie la liste des fichiers qui n'ont pas été copiés
+        """
+        fail: List[List[str]] = []
+        for e in self.lst_elem:
+            fail.append(e.restaurer(source))
+        return fail
+        
     def __repr__(self) -> str:
-        return "ProfilGroup[" + str(self.lst_elem) + "]"
+        return "ProfilGroup :\n\t\t" + "\n\t\t".join(e.__repr__() for e in self.lst_elem)
+
 
 
 ################################################################################
 class ProfilElem(XMLMixin):
     """Un élément d'un profil à sauvegarder (fichier ou dossier)."""
 
-    def __init__(self, path: Optional[str] = None, mode: int = 0):
+    def __init__(self, path: Optional[str] = "", mode: int = 0):
         super(ProfilElem, self).__init__()
 
         self.path = path
@@ -98,7 +125,7 @@ class ProfilElem(XMLMixin):
 
 
     def __repr__(self) -> str:
-        return self.path + ", " + str(self.mode)
+        return "ProfilElem : "+ self.path + " (mode " + str(self.mode)+")"
 
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
@@ -127,6 +154,10 @@ class ProfilElem(XMLMixin):
         elif self.mode == 2:
             for f in glob.glob(self.path):
                 shutil.copy2(f, dest)
+                
+        elif self.mode == 3:
+            for f in glob.glob(self.path, recursive = True):
+                shutil.copy2(f, dest)
 
         return fail
 
@@ -136,6 +167,7 @@ class ProfilElem(XMLMixin):
             Renvoie la liste des fichiers qui n'ont pas été copiés
         """
         fail: List[str] = []
+        print("restaurer", source, self.path)
         try:
             shutil.copytree(source, self.path)
         except shutil.Error as exc:
@@ -160,12 +192,14 @@ __FF.add_elem(os.path.join(os.environ['LOCALAPPDATA'], 'Mozilla','Firefox','Prof
 __BUR = ProfilGroup("Bureau")
 __BUR.add_elem(os.path.join(os.environ['USERPROFILE'], "Desktop","*.lnk"), 2)
 
-
+__TEST = ProfilGroup("Test")
+__TEST.add_elem(os.path.join(os.environ['USERPROFILE'], "Desktop", "Test"), 1)
 # PROFILS = ProfilConfig()
 # PROFILS.add_grp(__FF)
 # PROFILS.add_grp(__BUR)
 PROFILS = {"FireFox" : __FF,
-            "Bureau" : __BUR}
+            "Bureau" : __BUR,
+            "Test" : __TEST}
 
 ################################################################################
 

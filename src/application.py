@@ -41,11 +41,13 @@ class Application(Frame):
         self.process.start()
         self.update_status()
 
+
     def handle_restore(self):
         self.profilConfig.set_grps(self.config.get_config())
         self.process = RestoreProcess(self.manager, self.profilConfig)
         self.process.start()
         self.update_status()
+
 
     def update_status(self):
         x = self.process.queue.get()

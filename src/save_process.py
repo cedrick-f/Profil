@@ -25,6 +25,7 @@ from archive import ArchiveManager
 from contenu import ProfilGroup, PROFILS
 from messages import msg
 
+CONFIG_FILE = 'config.xml'
 
 class SaveProcess(Thread):
     """Définit un processus de sauvegarde."""
@@ -42,27 +43,15 @@ class SaveProcess(Thread):
         print("Sauvegarde dans ",temp.name)
         print("-->", filename)
         try:
+            self.queue.put(msg.get('save'))
             self.profilConfig.sauver(temp.name)
-            self.queue.put(self.profilConfig.nom)
+            
+            self.queue.put('self.profilConfig.nom')
        
             #self.profilConfig.sauver_xml(join(dirname(temp.name), 'config.xml'))
-            self.profilConfig.sauver_xml(join(temp.name, 'config.xml'))
+            self.profilConfig.sauver_xml(join(temp.name, CONFIG_FILE))
             self.manager.to_zip(temp.name, filename)
-#             for name, group in []:#self.profiles.items():
-#                 self.queue.put(name)
-#                 print(group.sauver(temp.name))
-#                 group.sauver_xml(join(dirname(temp.name), 'config.xml'))
-        
-#         try:
-#             for name, group in self.profiles.items():
-#                 self.queue.put(name)
-#                 subfolder = join(temp.name, name)
-#                 makedirs(subfolder)
-#                 print(group.sauver(subfolder))
-#                 group.sauver_xml(join(temp.name, name + '.xml'))
-# 
-#             self.queue.put(msg.get('archive'))
-#             self.manager.to_zip(temp.name, filename)
+
         finally:
             #rmtree(temp.name)
             self.queue.put(None)
@@ -82,16 +71,18 @@ class RestoreProcess(SaveProcess):
         try:
             self.queue.put(msg.get('unzip'))
             self.manager.from_zip(zip_path, temp.name)
-
+            
             self.queue.put(msg.get('parse'))
-            for config_file in listdir(temp.name):
-                if isdir(join(temp.name, config_file)):
-                    continue
-                group = ProfilGroup()
-                group.restaurer_xml(join(temp.name, config_file))
-                # TODO
+            self.profilConfig.restaurer_xml(join(temp.name, CONFIG_FILE))
+            print(self.profilConfig)
+            os.remove(join(temp.name, CONFIG_FILE))
+            
+            self.queue.put(msg.get('restore'))
+            self.profilConfig.restaurer(temp.name)
+            
+
         finally:
-            rmtree(temp.name)
+            #rmtree(temp.name)
             self.queue.put(None)
 
 
