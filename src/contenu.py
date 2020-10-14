@@ -9,56 +9,50 @@
 #
 ################################################################################
 
-# Modules "python"
-import os
-import shutil
 import glob
-from typing import Optional, List, Dict
-import datetime
-
+import shutil
+# Modules "python"
+from os import path
 
 # Modules "application"
 from structure import *
+
 
 ################################################################################
 class ProfilConfig(XMLMixin):
     def __init__(self, nom: str = "monProfil"):
         super(ProfilConfig, self).__init__()
         self.nom = nom
-        self.date = ""
-        self.lst_grp = list(PROFILS.values())
+        self.groups: List[ProfilGroup] = list(PROFILS.values())
 
     ############################################################################
     def __repr__(self) -> str:
-        return "ProfilConfig :\n\t" + "\n\t".join(g.__repr__() for g in self.lst_grp)
+        return "ProfilConfig :\n\t" + "\n\t".join(g.__repr__() for g in self.groups)
     
     ############################################################################
     def set_grps(self, lst_grp):
-        self.lst_grp = []
+        self.groups = []
         for g in lst_grp:
             self.add_grp(g)
             
     ############################################################################
     def add_grp(self, nom):
-        if nom in PROFILS and not PROFILS[nom] in self.lst_grp:
-            self.lst_grp.append(PROFILS[nom])
+        if nom in PROFILS and not PROFILS[nom] in self.groups:
+            self.groups.append(PROFILS[nom])
         
     ############################################################################
     def rmv_grp(self, nom):
-        if PROFILS[nom] in self.lst_grp:
-            self.lst_grp.remove(PROFILS[nom])
+        if PROFILS[nom] in self.groups:
+            self.groups.remove(PROFILS[nom])
         
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
-        fail: List[List[str]] = []
-        self.date = datetime.datetime.now().strftime('%m/%d/%Y')
+        fail: List[str] = []
         
-        for g in self.lst_grp:
+        for g in self.groups:
             subfolder = os.path.join(dest, g.nom)
             os.makedirs(subfolder)
-            print("   ", g.nom, "-->", subfolder)
-            fail.append(g.sauver(subfolder))
-        print(fail)
+            fail.extend(g.sauver(subfolder))
         return fail
     
     ############################################################################
@@ -66,9 +60,9 @@ class ProfilConfig(XMLMixin):
         """ Restaure les fichiers du dossier source vers le dossier d'origine
             Renvoie la liste des fichiers qui n'ont pas été copiés
         """
-        fail: List[List[str]] = []
-        for e in self.lst_grp:
-            fail.append(e.restaurer(source))
+        fail: List[str] = []
+        for group in self.groups:
+            fail.extend(group.restaurer(path.join(source, group.nom)))
         return fail
 
 
@@ -91,9 +85,9 @@ class ProfilGroup(XMLMixin):
 
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
-        fail: List[List[str]] = []
+        fail: List[str] = []
         for e in self.lst_elem:
-            fail.append(e.sauver(dest))
+            fail.extend(e.sauver(dest))
         return fail
 
     ############################################################################
@@ -101,9 +95,9 @@ class ProfilGroup(XMLMixin):
         """ Restaure les fichiers du dossier source vers le dossier d'origine
             Renvoie la liste des fichiers qui n'ont pas été copiés
         """
-        fail: List[List[str]] = []
+        fail: List[str] = []
         for e in self.lst_elem:
-            fail.append(e.restaurer(source))
+            fail.extend(e.restaurer(source))
         return fail
         
     
@@ -174,6 +168,8 @@ class ProfilElem(XMLMixin):
         fail: List[str] = []
         print("restaurer", source, self.path)
         try:
+            if path.exists(self.path):
+                shutil.rmtree(self.path)
             shutil.copytree(source, self.path)
         except shutil.Error as exc:
             errors = exc.args[0]
