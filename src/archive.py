@@ -1,65 +1,73 @@
-'''
-Copier un fichier dans un dossier : fonction copier_fichier(chemin_fichier, chemin_destination)
-   - renvoie True si tout s’est passé correctement
-   - interception de toute erreur possible
-   
-'''
-
-from typing import Optional
-import os, glob
+import glob
+import os
 import zipfile
-import shutil
-
-#ZIP_PATH_DEFAUT = os.path.join(os.environ['USERPROFILE'], 'Mes documents')
-ZIP_PATH_DEFAUT = os.path.join("U:", os.environ['USERNAME'], 'Mes documents')
-ZIP_FILE_DEFAUT = "profil.zip"
+from os.path import exists, expanduser, getmtime, splitext
+from typing import Optional
 
 
 class ArchiveManager:
-    '''
-    gere le processus de sauvegarde
-    - récupère le dossier personnel comme dossier par défaut
-    - peut analyser un fichier .zip
-    - peut créer des archives
-    '''
+    """Gère les archives des profils.
+
+    :type dossier: str or None
+    """
+
     def __init__(self):
         self.dossier = self.get_dossier_perso()
+
+    def set_dossier(self, dossier: str) -> Optional[str]:
+        """Change le répertoire de travail.
         
-    def get_dossier_perso(self) -> Optional[str]:
-        '''
-        - récupère le dossier perso
-        - renvoie None s'il est inaccessible
-        '''
-        self.chemin = os.path.join(os.environ['USERPROFILE'], 'Mes documents')
-        self.acces = os.access(self.chemin, os.W_OK)
-        
-        if not self.acces:
+        :return: Ce dossier s'il est accessible sinon None (la modification n'est pas appliquée dans ce cas).
+        """
+        dossier = self._get_dossier(dossier)
+        if dossier is None:
             return None
-    
-        return self.chemin
-    
-    def to_zip(self, src_path, dest_zip):
-        with zipfile.ZipFile(dest_zip, 'w') as myzip:
-            for f in glob.iglob(os.path.join(src_path, "**"), recursive = True):
+
+        self.dossier = dossier
+        return self.dossier
+
+    def get_dossier_perso(self) -> str:
+        """Récupère le dossier personnel d'un utilisateur."""
+        path = os.path.join("U:", os.environ['USERNAME'], 'Mes documents')
+        if exists(path):
+            return path
+        return expanduser('~')
+
+    def _get_dossier(self, dossier: str) -> Optional[str]:
+        """Retourne le même dossier s'il est accessible en écriture, sinon None."""
+        acces = os.access(dossier, os.W_OK)
+        return dossier if acces else None
+
+    def get_most_recent_zip(self, prefix: str) -> Optional[str]:
+        """Récupère le fichier .zip de sauvegarde le plus récent."""
+        max_mtime = 0
+        file = None
+        for filename in os.listdir(self.dossier):
+            if not filename.startswith(prefix) or splitext(filename)[1] != '.zip':
+                continue
+            mtime = getmtime(os.path.join(self.dossier, filename))
+            if mtime > max_mtime:
+                file = filename
+                max_mtime = mtime
+        return file
+
+    def to_zip(self, src_path: str, dest_zip: str) -> bool:
+        """Archive un dossier dans un fichier .zip de destination.
+
+        :param src_path: Chemin complet vers le répertoire à archiver
+        :param dest_zip: Nom du fichier de destination
+        """
+        with zipfile.ZipFile(os.path.join(self.dossier, dest_zip), 'w') as myzip:
+            for f in glob.iglob(os.path.join(src_path, "**"), recursive=True):
                 myzip.write(f, os.path.relpath(f, start=src_path))
         return True
-        
-    def from_zip(self, src_zip, dest_path):
-        with zipfile.ZipFile(src_zip, 'r') as myzip:
+
+    def from_zip(self, src_zip: str, dest_path: str) -> bool:
+        """Décompresse une archive .zip vers un dossier.
+
+        :param src_zip: Nom du fichier d'origine
+        :param dest_path: Chemin complet du répertoire dans lequel extraire les fichiers
+        """
+        with zipfile.ZipFile(os.path.join(self.dossier, src_zip), 'r') as myzip:
             myzip.extractall(dest_path)
         return True
-       
-
-"""
-zipfile.is_zipfile(filename)
-"""
-if __name__ == "__main__":
-    
-    a = ArchiveManager()
-    #doss = "U:\\marthe.vandenberg\\J'en ai ras le cul"
-
-    path = "U:\\marthe.vandenberg\\Dossier_test"
-    
-    fzip = os.path.join("U:\\marthe.vandenberg", ZIP_FILE_DEFAUT)
-    #a.to_zip(path, fzip)
-    a.from_zip(fzip, path)

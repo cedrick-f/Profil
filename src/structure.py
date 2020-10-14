@@ -10,9 +10,9 @@
 ################################################################################
 
 # Modules "python"
-from typing import Any, List, Optional, Type
+from typing import Any, List, Optional, Tuple
 import xml.etree.ElementTree as ET
-from xml.sax.saxutils import quoteattr, escape, unescape
+from xml.sax.saxutils import escape, unescape
 import os, sys
 
 
@@ -25,7 +25,7 @@ class XMLMixin:
     """ Classe Mixin pour permettre l'enregistrement et la restauration des objets
         au format XML
     """
-    def __init__(self, code = None):#: Optional[Type['XMLMixin']]
+    def __init__(self, code: Optional['XMLMixin'] = None):
         #print("__init__XMLMixin :", code)
         if code is None:
             code = self.__class__.__name__
@@ -49,7 +49,7 @@ class XMLMixin:
 
 
     ############################################################################
-    def to_xml(self):
+    def to_xml(self) -> ET.Element:
         """ Renvoie la branche xml (ET.Element)
             contenant les attributs à integrer à la structure
             obtenus par get_elem()
@@ -101,7 +101,7 @@ class XMLMixin:
 
 
     ############################################################################
-    def from_xml(self, branche: ET.Element):
+    def from_xml(self, branche: ET.Element) -> Tuple['XMLMixin', List[str]]:
         """ Modifie la valeur des attributs intégrés à la structure
             obtenus par get_elem()
             et enregistrés ddans la branche (ET.Element)
