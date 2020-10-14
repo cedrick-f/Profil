@@ -37,13 +37,13 @@ class Application(Frame):
         
     def handle_save(self):
         self.profilConfig.set_grps(self.config.get_config())
-        self.process = SaveProcess(self.profilConfig)
-        self.process = SaveProcess(self.manager, self.config.get_config())
+        self.process = SaveProcess(self.manager, self.profilConfig)
         self.process.start()
         self.update_status()
 
     def handle_restore(self):
-        self.process = RestoreProcess(self.manager, self.config.get_config())
+        self.profilConfig.set_grps(self.config.get_config())
+        self.process = RestoreProcess(self.manager, self.profilConfig)
         self.process.start()
         self.update_status()
 

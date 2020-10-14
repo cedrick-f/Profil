@@ -26,27 +26,32 @@ class ProfilConfig(XMLMixin):
         super(ProfilConfig, self).__init__()
         self.nom = nom
         self.date = ""
-        self.lst_grp: List[str] = list(PROFILS.keys())
+        self._lst_grp: List[str] = list(PROFILS.keys())
 
     def set_grps(self, lst_grp):
-        self.lst_grp = []
+        self._lst_grp = []
         for g in lst_grp:
             self.add_grp(g)
             
     def add_grp(self, nom):
-        if nom in PROFILS and not nom in self.lst_grp:
-            self.lst_grp.append(nom)
+        if nom in PROFILS and not nom in self._lst_grp:
+            self._lst_grp.append(nom)
         
         
     def rmv_grp(self, nom):
-        if nom in self.lst_grp:
-            self.lst_grp.remove(nom)
+        if nom in self._lst_grp:
+            self._lst_grp.remove(nom)
         
     def sauver(self, dest: str) -> List[str]:
         fail: List[List[str]] = []
         self.date = datetime.datetime.now().strftime('%m/%d/%Y')
-        for n, g in [(n, PROFILS[n]) for n in self.lst_grp]:
-            fail.append(g.sauver(os.path.join(dest, n)))
+        self.lst_grp = [PROFILS[n] for n in self._lst_grp]
+        for n, g in [(n, PROFILS[n]) for n in self._lst_grp]:
+            subfolder = os.path.join(dest, n)
+            os.makedirs(subfolder)
+            print("   ", n, "-->", subfolder)
+            fail.append(g.sauver(subfolder))
+        print(fail)
         return fail
 
 

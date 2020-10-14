@@ -30,48 +30,51 @@ class SaveProcess(Thread):
     """Définit un processus de sauvegarde."""
     BASENAME = 'profile-save-'
 
-    def __init__(self, profilConfig: ProfilConfig):
+    def __init__(self, manager: ArchiveManager, profilConfig: ProfilConfig):
         super().__init__()
         self.profilConfig = profilConfig
-    def __init__(self, manager: ArchiveManager, profiles: Dict[str, ProfilGroup]):
-        super().__init__()
         self.manager = manager
-        self.profiles = profiles
         self.queue = Queue()
 
     def run(self):
         temp = TemporaryDirectory()
-        print("Sauvegarde dans ",temp)
+        filename = SaveProcess.BASENAME + str(date.today()) + '.zip'
+        print("Sauvegarde dans ",temp.name)
+        print("-->", filename)
         try:
             self.profilConfig.sauver(temp.name)
             self.queue.put(self.profilConfig.nom)
+       
             #self.profilConfig.sauver_xml(join(dirname(temp.name), 'config.xml'))
-            
+            self.profilConfig.sauver_xml(join(temp.name, 'config.xml'))
+            self.manager.to_zip(temp.name, filename)
 #             for name, group in []:#self.profiles.items():
 #                 self.queue.put(name)
 #                 print(group.sauver(temp.name))
 #                 group.sauver_xml(join(dirname(temp.name), 'config.xml'))
-        filename = SaveProcess.BASENAME + str(date.today()) + '.zip'
-        try:
-            for name, group in self.profiles.items():
-                self.queue.put(name)
-                subfolder = join(temp.name, name)
-                makedirs(subfolder)
-                print(group.sauver(subfolder))
-                group.sauver_xml(join(temp.name, name + '.xml'))
-
-            self.queue.put(msg.get('archive'))
-            self.manager.to_zip(temp.name, filename)
+        
+#         try:
+#             for name, group in self.profiles.items():
+#                 self.queue.put(name)
+#                 subfolder = join(temp.name, name)
+#                 makedirs(subfolder)
+#                 print(group.sauver(subfolder))
+#                 group.sauver_xml(join(temp.name, name + '.xml'))
+# 
+#             self.queue.put(msg.get('archive'))
+#             self.manager.to_zip(temp.name, filename)
         finally:
-            rmtree(temp.name)
+            #rmtree(temp.name)
             self.queue.put(None)
 
 
 class RestoreProcess(SaveProcess):
     """Définit un processus de restoration."""
 
-    def __init__(self, manager: ArchiveManager, profiles: Dict[str, ProfilGroup]):
-        super().__init__(manager, profiles)
+    def __init__(self, manager: ArchiveManager, profilConfig: ProfilConfig):
+        super().__init__(manager, profilConfig)
+        self.profilConfig = profilConfig
+        self.manager = manager
 
     def run(self):
         temp = TemporaryDirectory()
