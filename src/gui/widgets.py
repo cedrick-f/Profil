@@ -1,13 +1,23 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+################################################################################
+#
+#
+#   module : widgets
+#
+#
+################################################################################
 from contenu import ProfilGroup, PROFILS
 from messages import msg
 from archive import ArchiveManager
 from tkinter import Button, Checkbutton, Entry, Frame, StringVar, BooleanVar, Label
 from tkinter.filedialog import askdirectory
-from typing import Dict, Callable
+from typing import Dict, Callable, List
 
 
 class ActionWidget(Frame):
-    """Interface pour les actions de sauvegarde et de restoration."""
+    """Interface pour les actions de sauvegarde et de restauration."""
 
     def __init__(self, parent: Frame, save_fn: Callable[[], None]):
         Frame.__init__(self, parent)
@@ -38,18 +48,18 @@ class ConfigWidget(Frame):
     def __init__(self, parent: Frame):
         Frame.__init__(self, parent)
         self.bool_vars: Dict[str, BooleanVar] = {}
-        for application in PROFILS.keys():
+        for application in PROFILS:
             bool_var = BooleanVar()
             checkbutton = Checkbutton(self, text=application, variable=bool_var)
             self.bool_vars[application] = bool_var
             checkbutton.pack()
         self.pack()
 
-    def get_config(self) -> Dict[str, ProfilGroup]:
-        profils: Dict[str, ProfilGroup] = {}
+    def get_config(self) -> List[str]:
+        profils: List[str] = []
         for key, var in self.bool_vars.items():
             if var.get():
-                profils[key] = PROFILS.get(key)
+                profils.append(key)
         return profils
 
 

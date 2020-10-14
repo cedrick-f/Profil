@@ -1,9 +1,20 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+################################################################################
+#
+#
+#   module : application (module de lancement GUI)
+#
+#
+################################################################################
+
 from save_process import SaveProcess
 from messages import msg
 from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget
 from tkinter import Frame, Tk
 from archive import ArchiveManager
-
+from contenu import ProfilConfig
 
 class Application(Frame):
     """Fenêtre principale de l'application."""
@@ -19,9 +30,13 @@ class Application(Frame):
         self.config.pack()
         self.process = None
         self.pack()
-
+        
+        self.profilConfig = ProfilConfig()
+        
+        
     def handle_save(self):
-        self.process = SaveProcess(self.config.get_config())
+        self.profilConfig.set_grps(self.config.get_config())
+        self.process = SaveProcess(self.profilConfig)
         self.process.start()
         self.update_status()
 

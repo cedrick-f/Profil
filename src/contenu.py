@@ -13,11 +13,42 @@
 import os
 import shutil
 import glob
-from typing import Optional, List
+from typing import Optional, List, Dict
+import datetime
 
 
 # Modules "application"
 from structure import *
+
+################################################################################
+class ProfilConfig(XMLMixin):
+    def __init__(self, nom: str = "monProfil"):
+        super(ProfilConfig, self).__init__()
+        self.nom = nom
+        self.date = ""
+        self.lst_grp: List[str] = list(PROFILS.keys())
+
+    def set_grps(self, lst_grp):
+        self.lst_grp = []
+        for g in lst_grp:
+            self.add_grp(g)
+            
+    def add_grp(self, nom):
+        if nom in PROFILS and not nom in self.lst_grp:
+            self.lst_grp.append(nom)
+        
+        
+    def rmv_grp(self, nom):
+        if nom in self.lst_grp:
+            self.lst_grp.remove(nom)
+        
+    def sauver(self, dest: str) -> List[str]:
+        fail: List[List[str]] = []
+        self.date = datetime.datetime.now().strftime('%m/%d/%Y')
+        for n, g in [(n, PROFILS[n]) for n in self.lst_grp]:
+            fail.append(g.sauver(os.path.join(dest, n)))
+        return fail
+
 
 ################################################################################
 class ProfilGroup(XMLMixin):
@@ -124,6 +155,10 @@ __FF.add_elem(os.path.join(os.environ['LOCALAPPDATA'], 'Mozilla','Firefox','Prof
 __BUR = ProfilGroup("Bureau")
 __BUR.add_elem(os.path.join(os.environ['USERPROFILE'], "Desktop","*.lnk"), 2)
 
+
+# PROFILS = ProfilConfig()
+# PROFILS.add_grp(__FF)
+# PROFILS.add_grp(__BUR)
 PROFILS = {"FireFox" : __FF,
             "Bureau" : __BUR}
 
