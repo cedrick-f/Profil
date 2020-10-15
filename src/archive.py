@@ -4,7 +4,7 @@
 ################################################################################
 #
 #
-#   module : widgets
+#   module : archive = gestion de l'archivage (ZIP)
 #
 #
 ################################################################################
@@ -14,12 +14,15 @@ import os
 import zipfile
 from os.path import exists, expanduser, getmtime, splitext
 from typing import Optional
+
+# bibliothèque à installer : pip install pywin32
 from win32com.shell import shell, shellcon
 
 def get_path_mesdocuments():
-    #return os.path.join("U:", os.environ['USERNAME'], 'Mes documents')
-    return shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL, None, 0)
-
+    try:
+        return shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL, None, 0)
+    except:
+        return os.path.join("U:", os.environ['USERNAME'], 'Mes documents')
 
 
 class ArchiveManager:
