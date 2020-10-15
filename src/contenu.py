@@ -167,10 +167,27 @@ class ProfilElem(XMLMixin):
         """
         fail: List[str] = []
         print("restaurer", source, self.path)
+        
         try:
             if path.exists(self.path):
-                shutil.rmtree(self.path)
-            shutil.copytree(source, self.path)
+                shutil.rmtree(self.path, True)
+
+
+            if self.mode == 0:
+                shutil.copy2(source, self.path)
+
+            elif self.mode == 1:
+                shutil.copytree(source, self.path)
+
+            elif self.mode == 2:
+                for f in glob.glob(os.path.join(source, "**")):
+                    print(f, glob.glob(os.path.join(source, "**")))
+                    shutil.copy2(f, self.path.split("*")[0])
+
+            elif self.mode == 3:
+                for f in glob.glob(source, recursive = True):
+                    shutil.copy2(f, self.path)
+
         except shutil.Error as exc:
             errors = exc.args[0]
             for error in errors:
@@ -211,7 +228,8 @@ if __name__ == "__main__":
     # print(os.listdir(pp))
     # e = ProfilElem(pp, 1)
 
-    base = "C:\\Users\\Cedrick\\Documents\\Developp\\Profil"
+    #base = "C:\\Users\\Cedrick\\Documents\\Developp\\Profil"
     # pp = os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
     # print(pp)
-    __FF.sauver_xml(os.path.join(base, "text.xml"))
+    #__FF.sauver_xml(os.path.join(base, "text.xml"))
+    pass
