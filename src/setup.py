@@ -30,7 +30,7 @@ shutil.rmtree("build", ignore_errors=True)
 # Inculsion des fichiers de données
 #################################################################################################
 
-includefiles = []
+includefiles = ['gui/']
 
     
 
@@ -38,7 +38,7 @@ includefiles = []
 build_exe_options = {'build_exe': 'build/bin',
                      'include_msvcr': True,
                      'add_to_path': True,
-                     "packages": [],
+                     "packages": ['tkinter'],
                      "optimize" : 1,
                      "namespace_packages" : [],
                      "excludes": ['pydoc', 'doctest',
