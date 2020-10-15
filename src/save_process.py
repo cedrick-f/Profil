@@ -44,7 +44,6 @@ class SaveProcess(Thread):
             self.profil_config.sauver_xml(join(temp.name, CONFIG_FILE))
             self.manager.to_zip(temp.name, filename)
         finally:
-            rmtree(temp.name)
             self.queue.put(None)
 
 
@@ -68,7 +67,6 @@ class RestoreProcess(SaveProcess):
             self.queue.put(msg.get('restore'))
             self.profil_config.restaurer(temp.name)
         finally:
-            rmtree(temp.name)
             self.queue.put(None)
 
 
