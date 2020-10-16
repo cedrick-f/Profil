@@ -104,22 +104,35 @@ class WorkplaceWidget(Frame):
     def __init__(self, parent: Frame, manager: ArchiveManager):
         Frame.__init__(self, parent)
         self.manager = manager
+        
         self.folder_path = StringVar(value=manager.dossier)
         self.entry = Entry(self, textvariable=self.folder_path)
+        self.entry.bind('<Return>', (lambda _: self.handle_text_change()))
         self.entry.grid(row=0, column=1)
+        
         self.browse_btn = Button(self, text=msg.get('browse'), command=self.handle_browse_click)
         self.browse_btn.grid(row=0, column=3)
+        
         self.pack()
 
     def handle_browse_click(self):
-        directory = self.manager.set_dossier(askdirectory())
-
-        if directory is None:
-            self.folder_path.set('')
+        directory = askdirectory()
+        if len(directory) > 0:
+            self.check_dossier(directory)
+        
+    def handle_text_change(self):
+        directory = self.folder_path.get()
+        self.check_dossier(directory)
+        
+        
+    def check_dossier(self, directory):
+        d2 = self.manager.set_dossier(directory)
+        if d2 is None:
             self.entry.configure(bg = 'LightPink')
         else:
             self.entry.configure(bg = 'white')
             self.folder_path.set(directory)
+
 
 
 class Splash(Toplevel):

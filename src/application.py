@@ -41,7 +41,7 @@ class Application(Frame):
         master.withdraw()
         splash = Splash(self)
         
-        self.after(5000, splash.destroy)
+        self.after(1000, splash.destroy)
         master.deiconify()
         splash.lift()
         center_on_screen(splash)
