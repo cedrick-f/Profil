@@ -66,6 +66,8 @@ class ProfilConfig(XMLMixin):
         return fail
 
 
+
+
 ################################################################################
 class ProfilGroup(XMLMixin):
     """Un groupe de fichier 'profil' à sauvegarder."""
@@ -80,14 +82,21 @@ class ProfilGroup(XMLMixin):
         return "ProfilGroup :\n\t\t" + "\n\t\t".join(e.__repr__() for e in self.lst_elem)
 
     ############################################################################
-    def add_elem(self, path: Optional[str] = None, mode: int = 0):
-        self.lst_elem.append(ProfilElem(path, mode))
+    def add_elem(self, name: Optional[str] = "", path: Optional[str] = None, mode: int = 0):
+        self.lst_elem.append(ProfilElem(name, path, mode))
 
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
         fail: List[str] = []
-        for e in self.lst_elem:
-            fail.extend(e.sauver(dest))
+        for g in self.lst_elem:
+            if g.name is None:
+                fail.extend(g.sauver(dest))
+
+            else:
+                subfolder = os.path.join(dest, g.name)
+                os.makedirs(subfolder)
+                fail.extend(g.sauver(subfolder))
+
         return fail
 
     ############################################################################
@@ -95,9 +104,17 @@ class ProfilGroup(XMLMixin):
         """ Restaure les fichiers du dossier source vers le dossier d'origine
             Renvoie la liste des fichiers qui n'ont pas été copiés
         """
+        print("restaurer", self, source)
         fail: List[str] = []
-        for e in self.lst_elem:
-            fail.extend(e.restaurer(source))
+        for group in self.lst_elem:
+            if group.name is None:
+                fail.extend(group.restaurer(source))
+                
+            else:
+                subfolder = os.path.join(source, group.name)
+                print("sub :",subfolder)
+                fail.extend(group.restaurer(subfolder))
+                
         return fail
         
     
@@ -107,10 +124,11 @@ class ProfilGroup(XMLMixin):
 class ProfilElem(XMLMixin):
     """Un élément d'un profil à sauvegarder (fichier ou dossier)."""
 
-    def __init__(self, path: Optional[str] = "", mode: int = 0):
+    def __init__(self, name: Optional[str] = None, path: Optional[str] = "", mode: int = 0):
         super(ProfilElem, self).__init__()
 
         self.path = path
+        self.name = name
 
         # Mode de copie :
         #  0 = fichier unique
@@ -204,14 +222,14 @@ class ProfilElem(XMLMixin):
 ################################################################################
 # Constantes "application"
 __FF = ProfilGroup("FireFox")
-__FF.add_elem(os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles'), 1)
-__FF.add_elem(os.path.join(os.environ['LOCALAPPDATA'], 'Mozilla','Firefox','Profiles'), 1)
+__FF.add_elem("Roaming", os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles'), 1)
+__FF.add_elem("Local", os.path.join(os.environ['LOCALAPPDATA'], 'Mozilla','Firefox','Profiles'), 1)
 
 __BUR = ProfilGroup("Bureau")
-__BUR.add_elem(os.path.join(os.environ['USERPROFILE'], "Desktop","*.lnk"), 2)
+__BUR.add_elem(None, os.path.join(os.environ['USERPROFILE'], "Desktop","*.lnk"), 2)
 
 __TEST = ProfilGroup("Test")
-__TEST.add_elem(os.path.join(os.environ['USERPROFILE'], "Desktop", "Test"), 1)
+__TEST.add_elem(None, os.path.join(os.environ['USERPROFILE'], "Desktop", "Test"), 1)
 # PROFILS = ProfilConfig()
 # PROFILS.add_grp(__FF)
 # PROFILS.add_grp(__BUR)

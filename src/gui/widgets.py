@@ -8,7 +8,7 @@
 #
 #
 ################################################################################
-from contenu import ProfilGroup, PROFILS
+from contenu import ProfilGroup, PROFILS, ProfilElem
 from messages import msg
 from archive import ArchiveManager
 from tkinter import Button, Checkbutton, Entry, Frame, StringVar, BooleanVar, \
@@ -32,6 +32,7 @@ class ActionWidget(Frame):
         self.restore_btn = Button(self, text=msg.get('restore'), command=self.handle_restore_click)
         self.restore_btn.grid(row=0, column=3)
         self.label = Label()
+        self.lst_elem: List[ProfilElem] = []
         self.label.pack()
         self.pack()
 
@@ -49,7 +50,7 @@ class ActionWidget(Frame):
 
 class ConfigWidget(Frame):
     """Interface pour configurer quels éléments seront sauvegardés."""
-
+ 
     def __init__(self, parent: Frame):
         Frame.__init__(self, parent)
         self.bool_vars: Dict[str, BooleanVar] = {}
@@ -59,7 +60,7 @@ class ConfigWidget(Frame):
             self.bool_vars[application] = bool_var
             checkbutton.pack()
         self.pack()
-
+ 
     def get_config(self) -> List[str]:
         profils: List[str] = []
         for key, var in self.bool_vars.items():
@@ -67,7 +68,36 @@ class ConfigWidget(Frame):
                 profils.append(key)
         return profils
 
+##### COUILLE
+'''
+class ConfigWidget(Frame):
+    """Interface pour configurer quels éléments seront sauvegardés."""
 
+    def __init__(self, parent: Frame):
+        Frame.__init__(self, parent)
+        self.bool_vars: Dict[str, BooleanVar] = {}
+        for application in PROFILS:
+            bool_var = BooleanVar()
+            checkbutton = Checkbutton(self, text=application, variable=bool_var)
+            self.bool_vars[application] = bool_var
+            checkbutton.pack()
+            for application in lst_elem:
+                bool_var = BooleanVar()
+                checkbutton = Checkbutton(self, text=application, variable=bool_var)
+                self.bool_vars[application] = bool_var
+                checkbutton.pack()
+                
+            
+        self.pack()
+
+    def get_config(self) -> List[str]:
+        profils: List[str] = []
+        for key, var in self.bool_vars.items():
+            if var.get():
+                profils.append(key)
+        return profils
+        '''
+        
 class WorkplaceWidget(Frame):
     """Interface pour choisir le répertoire de sauvegarde."""
 
@@ -83,8 +113,13 @@ class WorkplaceWidget(Frame):
 
     def handle_browse_click(self):
         directory = self.manager.set_dossier(askdirectory())
-        self.folder_path.set(directory)
 
+        if directory is None:
+            self.folder_path.set('')
+            self.entry.configure(bg = 'LightPink')
+        else:
+            self.entry.configure(bg = 'white')
+            self.folder_path.set(directory)
 
 
 class Splash(Toplevel):
