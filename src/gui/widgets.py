@@ -80,8 +80,13 @@ class WorkplaceWidget(Frame):
 
     def handle_browse_click(self):
         directory = self.manager.set_dossier(askdirectory())
-        self.folder_path.set(directory)
 
+        if directory is None:
+            self.folder_path.set('')
+            self.entry.configure(bg = 'LightPink')
+        else:
+            self.entry.configure(bg = 'snow')
+            self.folder_path.set(directory)
 
 
 class Splash(Toplevel):
@@ -92,3 +97,4 @@ class Splash(Toplevel):
         T['text']="Information"
         T.pack()
         self.update()
+        
