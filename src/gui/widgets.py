@@ -17,6 +17,9 @@ from tkinter.filedialog import askdirectory
 from typing import Dict, Callable, List
 
 
+
+
+
 class ActionWidget(Frame):
     """Interface pour les actions de sauvegarde et de restauration."""
 
@@ -87,8 +90,11 @@ class WorkplaceWidget(Frame):
 class Splash(Toplevel):
     def __init__(self, parent):
         Toplevel.__init__(self, parent)
-        self.title("Sauve Ton Profil")
-        T = Label(self, height=2, width=30)
-        T['text']="Information"
-        T.pack()
+        T = Label(self, text = msg.get('avertissement'))
+        T.grid()
+        self.overrideredirect(1)
         self.update()
+
+        
+    
+
