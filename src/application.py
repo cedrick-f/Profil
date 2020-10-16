@@ -12,7 +12,7 @@
 from save_process import SaveProcess
 from save_process import RestoreProcess, SaveProcess
 from messages import msg
-from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget
+from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget, Splash
 from tkinter import Frame, Tk
 from archive import ArchiveManager
 from contenu import ProfilConfig
@@ -22,6 +22,15 @@ class Application(Frame):
 
     def __init__(self, master: Tk):
         super().__init__(master)
+        
+        # Affichage d'un splash screen d'avertissement
+        master.withdraw()
+        splash = Splash(self)
+        splash.overrideredirect(1)
+        splash.after(3000, splash.destroy)
+        master.deiconify()
+
+        
         self.manager = ArchiveManager()
         self.actions = ActionWidget(self, self.handle_save, self.handle_restore)
         self.actions.pack()
@@ -33,6 +42,8 @@ class Application(Frame):
         self.pack()
         
         self.profilConfig = ProfilConfig()
+        
+        
         
         
     def handle_save(self):
@@ -60,6 +71,8 @@ class Application(Frame):
             self.master.after(150, self.update_status)
 
 
+    
+    
 if __name__ == '__main__':
     root = Tk()
     root.title(msg.get('title'))

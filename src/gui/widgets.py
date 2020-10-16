@@ -11,7 +11,8 @@
 from contenu import ProfilGroup, PROFILS
 from messages import msg
 from archive import ArchiveManager
-from tkinter import Button, Checkbutton, Entry, Frame, StringVar, BooleanVar, Label
+from tkinter import Button, Checkbutton, Entry, Frame, StringVar, BooleanVar, \
+                    Label, Toplevel
 from tkinter.filedialog import askdirectory
 from typing import Dict, Callable, List
 
@@ -80,3 +81,14 @@ class WorkplaceWidget(Frame):
     def handle_browse_click(self):
         directory = self.manager.set_dossier(askdirectory())
         self.folder_path.set(directory)
+
+
+
+class Splash(Toplevel):
+    def __init__(self, parent):
+        Toplevel.__init__(self, parent)
+        self.title("Sauve Ton Profil")
+        T = Label(self, height=2, width=30)
+        T['text']="Information"
+        T.pack()
+        self.update()
