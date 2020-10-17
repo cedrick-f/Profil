@@ -16,5 +16,6 @@ msg = {
     
     Son développement est encore en cours,
     merci de votre indulgence !
-    """
+    """,
+    'nom_ws' : "Emplacement de sauvegarde"
 }

@@ -25,14 +25,19 @@ class Application(Frame):
         super().__init__(master)
         
         self.manager = ArchiveManager()
-        self.actions = ActionWidget(self, self.handle_save, self.handle_restore)
-        self.actions.pack()
+        
         self.workplace = WorkplaceWidget(self, self.manager)
-        self.workplace.pack()
+        self.workplace.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
+        
+        self.actions = ActionWidget(self, self.handle_save, self.handle_restore)
+        self.actions.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
+        
         self.config = ConfigWidget(self)
-        self.config.pack()
+        self.config.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
+        
         self.process = None
-        #self.pack()
+        self.pack(fill=tkinter.X, expand=1)
+        
         
         self.profilConfig = ProfilConfig()
         
@@ -45,7 +50,7 @@ class Application(Frame):
         master.deiconify()
         splash.lift()
         center_on_screen(splash)
-        self.after(500, self.pack)
+        #self.after(100, self.pack)
     
     def handle_save(self):
         self.profilConfig.set_grps(self.config.get_config())
@@ -77,7 +82,8 @@ class Application(Frame):
 if __name__ == '__main__':
     root = Tk()
     root.title(msg.get('title'))
+    root.rowconfigure(0, weight=1)
+    root.columnconfigure(0, weight=1)
     center_on_screen(root)
     app = Application(root)
-    
     app.mainloop()
