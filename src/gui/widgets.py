@@ -8,15 +8,13 @@
 #
 #
 ################################################################################
-from contenu import ProfilGroup, PROFILS, ProfilElem
+from contenu import ProfilGroup, PROFILS, ProfilElem, ProfilConfig
 from messages import msg
 from archive import ArchiveManager
 from tkinter import Button, Checkbutton, Entry, Frame, StringVar, BooleanVar, \
                     Label, Toplevel
 from tkinter.filedialog import askdirectory
 from typing import Dict, Callable, List
-
-
 
 
 
@@ -57,53 +55,53 @@ class ActionWidget(Frame):
 #################################################################################################
 class ConfigWidget(Frame):
     """Interface pour configurer quels éléments seront sauvegardés."""
- 
-    def __init__(self, parent: Frame):
+
+    def __init__(self, parent: Frame, profilConfig: ProfilConfig):
         Frame.__init__(self, parent)
-        self.bool_vars: Dict[str, BooleanVar] = {}
-        for application in PROFILS:
+        self.bool_vars: Dict[str, List[BooleanVar, Dict[BooleanVar]]] = {}
+        
+        # Les groupes ...
+        for nom_grp, groupe in PROFILS.items():
             bool_var = BooleanVar()
-            checkbutton = Checkbutton(self, text=application, variable=bool_var)
-            self.bool_vars[application] = bool_var
+            checkbutton = Checkbutton(self, text=nom_grp, 
+                                      variable=bool_var,
+                                      command = lambda n=nom_grp: self.manage_buttons(n))
+            self.bool_vars[nom_grp] = [bool_var, {}]
             checkbutton.pack(anchor = "w")
-        #self.pack()
- 
-    def get_config(self) -> List[str]:
-        profils: List[str] = []
-        for key, var in self.bool_vars.items():
-            if var.get():
-                profils.append(key)
-        return profils
-
-##### COUILLE
-'''
-class ConfigWidget(Frame):
-    """Interface pour configurer quels éléments seront sauvegardés."""
-
-    def __init__(self, parent: Frame):
-        Frame.__init__(self, parent)
-        self.bool_vars: Dict[str, BooleanVar] = {}
-        for application in PROFILS:
-            bool_var = BooleanVar()
-            checkbutton = Checkbutton(self, text=application, variable=bool_var)
-            self.bool_vars[application] = bool_var
-            checkbutton.pack()
-            for application in lst_elem:
-                bool_var = BooleanVar()
-                checkbutton = Checkbutton(self, text=application, variable=bool_var)
-                self.bool_vars[application] = bool_var
-                checkbutton.pack()
-                
             
-        self.pack()
-
+            # Les éléments ...
+            if len(groupe.lst_elem) > 1:
+                for elem in groupe.lst_elem:
+                    bool_var = BooleanVar()
+                    checkbutton = Checkbutton(self, text=elem.name, 
+                                              variable=bool_var,
+                                              command = lambda: self.manage_buttons(elem.name))
+                    self.bool_vars[nom_grp][1][elem.name] = bool_var
+                    checkbutton.pack(anchor = "w", padx = (20, 0))
+    
+    
+    def manage_buttons(self, nom):
+        print("click", nom)
+        for n, l in self.bool_vars.items():
+            print("  ", n)
+            bv, d = l
+            if len(d) > 0:
+                if nom == n:
+                    for b in d.values():
+                        b.set(bv.get())
+                elif any(b.get() for b in d.values()):
+                    bv.set(True)
+                elif not any(b.get() for b in d.values()):
+                    bv.set(False)
+        
+        
     def get_config(self) -> List[str]:
         profils: List[str] = []
         for key, var in self.bool_vars.items():
             if var.get():
                 profils.append(key)
         return profils
-        '''
+
 
 
 
