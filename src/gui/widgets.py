@@ -30,17 +30,18 @@ class ActionWidget(Frame):
         self.save_btn.grid(row=0, column=0, 
                            ipadx = 5, ipady = 5, 
                            padx = 5, pady = 5,
-                           sticky="nsew")
+                           sticky = "nsew")
         
         self.restore_btn = Button(self, text=msg.get('restore'), command=self.handle_restore_click)
         self.restore_btn.grid(row=0, column=1, 
                               ipadx = 5, ipady = 5, 
                               padx = 5, pady = 5,
-                              sticky="nsew")
+                              sticky = "nsew")
         
         self.status = Label(self, text = '...')
         self.lst_elem: List[ProfilElem] = []
-        self.status.grid(row=1, column=0, columnspan = 2, sticky="nsew")
+        self.status.grid(row=1, column=0, columnspan = 2, 
+                         sticky = "nsew")
         
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)

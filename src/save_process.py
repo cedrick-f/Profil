@@ -52,17 +52,20 @@ class RestoreProcess(SaveProcess):
 
     def __init__(self, manager: ArchiveManager, profil_config: ProfilConfig):
         super().__init__(manager, profil_config)
+        self.profil_config = profil_config
+        print(self.profil_config)
         self.manager = manager
 
     def run(self):
         temp = TemporaryDirectory()
         zip_path = self.manager.get_most_recent_zip(SaveProcess.BASENAME)
+        print("Restauration de :", self.profil_config)
         try:
             self.queue.put(msg.get('unzip'))
             self.manager.from_zip(zip_path, temp.name)
 
-            self.queue.put(msg.get('parse'))
-            self.profil_config.restaurer_xml(join(temp.name, CONFIG_FILE))
+#             self.queue.put(msg.get('parse'))
+#             self.profil_config.restaurer_xml(join(temp.name, CONFIG_FILE))
 
             self.queue.put(msg.get('restoring'))
             self.profil_config.restaurer(temp.name)

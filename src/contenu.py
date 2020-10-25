@@ -177,7 +177,6 @@ class ProfilGroup(XMLMixin):
                 
             else:
                 subfolder = os.path.join(source, group.name)
-                print("sub :",subfolder)
                 fail.extend(group.restaurer(subfolder))
                 
         return fail
