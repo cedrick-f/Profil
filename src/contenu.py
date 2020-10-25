@@ -29,7 +29,7 @@ class ProfilConfig(XMLMixin):
 
     ############################################################################
     def __repr__(self) -> str:
-        return "ProfilConfig :\n\t" + "\n\t".join(g.__repr__() for g in self.groups)
+        return "ProfilConfig - "+self.nom+" :\n\t" + "\n\t".join(g.__repr__() for g in self.groups)
     
     
     ############################################################################
@@ -53,11 +53,11 @@ class ProfilConfig(XMLMixin):
     
     ############################################################################
     def set_grps(self, lst_grp):
-        print("set_grps", lst_grp)
+#         print("set_grps", lst_grp)
         self.groups = []
         for g in lst_grp:
             self.add_grp(PROFILS.get_group(g))
-        print(">>>", self)
+#         print(">>>", self)
             
 #     ############################################################################
 #     def set_config(self, lst_grp):
@@ -67,14 +67,14 @@ class ProfilConfig(XMLMixin):
             
     ############################################################################
     def set_config(self, profils: Dict[str, List[str]]):
-        print("set_config")
+#         print("set_config")
         self.groups = []
         for grp in PROFILS.groups:
             if grp.nom in profils:
                 pg = ProfilGroup(grp.nom)
                 pg.set_config(profils[grp.nom])
                 self.groups.append(pg)
-        print(">>>", self)
+#         print(">>>", self)
     
     
     ############################################################################
@@ -120,7 +120,7 @@ class ProfilGroup(XMLMixin):
 
     ############################################################################
     def __repr__(self) -> str:
-        return "ProfilGroup :\n\t\t" + "\n\t\t".join(e.__repr__() for e in self.lst_elem)
+        return "ProfilGroup - "+self.nom+" :\n\t\t" + "\n\t\t".join(e.__repr__() for e in self.lst_elem)
 
 
     ############################################################################
@@ -154,7 +154,7 @@ class ProfilGroup(XMLMixin):
     def sauver(self, dest: str) -> List[str]:
         fail: List[str] = []
         for g in self.lst_elem:
-            if g.name is None:
+            if g.name is "":
                 fail.extend(g.sauver(dest))
 
             else:
@@ -189,7 +189,9 @@ class ProfilGroup(XMLMixin):
 class ProfilElem(XMLMixin):
     """Un élément d'un profil à sauvegarder (fichier ou dossier)."""
 
-    def __init__(self, name: Optional[str] = None, path: Optional[str] = "", mode: int = 0):
+    def __init__(self, name: Optional[str] = "", 
+                 path: Optional[str] = "", 
+                 mode: int = 0):
         super(ProfilElem, self).__init__()
 
         self.path = path
@@ -207,7 +209,7 @@ class ProfilElem(XMLMixin):
 
     ############################################################################
     def __repr__(self) -> str:
-        return "ProfilElem : "+ self.path + " (mode " + str(self.mode)+")"
+        return "ProfilElem - "+self.name+" : "+ self.path + " (mode " + str(self.mode)+")"
 
 
     ############################################################################
@@ -305,12 +307,12 @@ __FF.add_elem("Roaming", os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox',
 __FF.add_elem("Local", os.path.join(os.environ['LOCALAPPDATA'], 'Mozilla','Firefox','Profiles'), 1)
 
 __BUR = ProfilGroup("Bureau")
-__BUR.add_elem(None, os.path.join(os.environ['USERPROFILE'], "Desktop","*.lnk"), 2)
+__BUR.add_elem("", os.path.join(os.environ['USERPROFILE'], "Desktop","*.lnk"), 2)
 
 
 # Un dossier pour faire des tests en toute sécurité
 __TEST = ProfilGroup("Test")
-__TEST.add_elem(None, os.path.join(os.environ['USERPROFILE'], "Desktop", "Test"), 1)
+__TEST.add_elem("", os.path.join(os.environ['USERPROFILE'], "Desktop", "Test"), 1)
 
 
 PROFILS = ProfilConfig()
@@ -334,4 +336,12 @@ if __name__ == "__main__":
     # pp = os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
     # print(pp)
     #__FF.sauver_xml(os.path.join(base, "text.xml"))
-    pass
+    print(PROFILS)
+    
+    # essai avec pickle
+    import pickle
+    
+    with open('data.pickle', 'wb') as f:
+        # Pickle the 'data' dictionary using the highest protocol available.
+        pickle.dump(PROFILS, f, pickle.HIGHEST_PROTOCOL)
+    

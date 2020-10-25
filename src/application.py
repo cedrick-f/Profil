@@ -19,22 +19,42 @@ from archive import ArchiveManager
 from contenu import PROFILS
 
 class Application(Frame):
-    """Fenêtre principale de l'application."""
+    """ Fenêtre principale de l'application
+    """
 
     def __init__(self, master: Tk):
         super().__init__(master)
         
         self.manager = ArchiveManager()
-        self.profilConfig = PROFILS.copie()  # Par défaut : tous les éléments
+        self.profilConfigSave = PROFILS.copie()  # Par défaut : tous les éléments
+        self.profilConfigRest = self.manager.get_profil_config(SaveProcess.BASENAME)
                 
         self.workplace = WorkplaceWidget(self, self.manager)
-        self.workplace.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
+#         self.workplace.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
+        self.workplace.grid(row=0, column=0, columnspan = 2, 
+                            padx = 5, pady = 5,
+                            sticky = "nsew")
         
         self.actions = ActionWidget(self, self.handle_save, self.handle_restore)
-        self.actions.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
+#         self.actions.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
+        self.actions.grid(row=1, column=0, columnspan = 2, 
+                          padx = 5, pady = 5,
+                          sticky = "nsew")
         
-        self.config = ConfigWidget(self, self.profilConfig)
-        self.config.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
+        self.configS = ConfigWidget(self, self.profilConfigSave)
+#         self.config.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
+        self.configS.grid(row=2, column=0,
+                          padx = 5, pady = 5,
+                          sticky = "nsew")
+        
+        self.configR = ConfigWidget(self, self.profilConfigRest)
+#         self.config.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
+        self.configR.grid(row=2, column=1, 
+                          padx = 5, pady = 5,
+                          sticky = "nsew")
+        
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
         
         self.process = None
         self.pack(fill=tkinter.X, expand=1)
@@ -52,15 +72,15 @@ class Application(Frame):
         #self.after(100, self.pack)
     
     def handle_save(self):
-        self.profilConfig.set_grps(self.config.get_config())
-        self.process = SaveProcess(self.manager, self.profilConfig)
+        self.profilConfigSave.set_grps(self.configS.get_config())
+        self.process = SaveProcess(self.manager, self.profilConfigSave)
         self.process.start()
         self.update_status()
 
 
     def handle_restore(self):
-        self.profilConfig.set_grps(self.config.get_config()) ## ne sert à rien ... à revoir
-        self.process = RestoreProcess(self.manager, self.profilConfig)
+        self.profilConfigRest.set_grps(self.configR.get_config()) ## ne sert à rien ... à revoir
+        self.process = RestoreProcess(self.manager, self.profilConfigRest)
         self.process.start()
         self.update_status()
 

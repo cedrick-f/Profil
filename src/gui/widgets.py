@@ -27,15 +27,23 @@ class ActionWidget(Frame):
         self.restore_fn = restore_fn
         
         self.save_btn = Button(self, text=msg.get('save'), command=self.handle_save_click)
-        self.save_btn.grid(row=0, column=0, ipadx = 5, ipady = 5)
+        self.save_btn.grid(row=0, column=0, 
+                           ipadx = 5, ipady = 5, 
+                           padx = 5, pady = 5,
+                           sticky="nsew")
         
         self.restore_btn = Button(self, text=msg.get('restore'), command=self.handle_restore_click)
-        self.restore_btn.grid(row=0, column=1, ipadx = 5, ipady = 5)
+        self.restore_btn.grid(row=0, column=1, 
+                              ipadx = 5, ipady = 5, 
+                              padx = 5, pady = 5,
+                              sticky="nsew")
         
         self.status = Label(self, text = '...')
         self.lst_elem: List[ProfilElem] = []
-        self.status.grid(row=1, column=0, columnspan = 2)
-
+        self.status.grid(row=1, column=0, columnspan = 2, sticky="nsew")
+        
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
 
     def update_status(self, running: bool, text: str):
         for button in (self.save_btn, self.restore_btn):
@@ -69,7 +77,12 @@ class ConfigWidget(Frame):
                                       variable=bool_var,
                                       command = lambda n=groupe.nom: self.manage_buttons(n))
             self.bool_vars[groupe.nom] = [bool_var, {}]
-            bool_var.set(groupe.nom in self.profilConfig.get_names())
+            if groupe.nom in self.profilConfig.get_names():
+                checkbutton.configure(state='normal')
+                bool_var.set(True)
+            else:
+                checkbutton.configure(state='disabled')
+               
             checkbutton.pack(anchor = "w")
             
             # Les éléments ...
@@ -80,7 +93,13 @@ class ConfigWidget(Frame):
                                               variable=bool_var,
                                               command = lambda: self.manage_buttons(elem.name))
                     self.bool_vars[groupe.nom][1][elem.name] = bool_var
-                    bool_var.set(elem.name in self.profilConfig.get_group(groupe.nom).get_names())
+                    grp = self.profilConfig.get_group(groupe.nom)
+                    if grp is not None and elem.name in grp.get_names():
+                        checkbutton.configure(state='normal')
+                        bool_var.set(True)
+                    else:
+                        checkbutton.configure(state='disabled')
+                      
                     checkbutton.pack(anchor = "w", padx = (20, 0))
     
     

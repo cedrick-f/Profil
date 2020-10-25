@@ -14,9 +14,13 @@ import os
 import zipfile
 from os.path import exists, expanduser, getmtime, splitext
 from typing import Optional
+from contenu import ProfilConfig
+from tempfile import TemporaryDirectory
+import save_process
 
 # bibliothèque à installer : pip install pywin32
 from win32com.shell import shell, shellcon
+from genericpath import isfile
 
 def get_path_mesdocuments():
     try:
@@ -30,14 +34,16 @@ class ArchiveManager:
 
     :type dossier: str or None
     """
-
     def __init__(self):
         self.dossier = self.get_dossier_perso()
 
+
+    ############################################################################
     def set_dossier(self, dossier: str) -> Optional[str]:
-        """Change le répertoire de travail.
+        """ Change le répertoire de travail.
         
-        :return: Ce dossier s'il est accessible sinon None (la modification n'est pas appliquée dans ce cas).
+        :return: Ce dossier s'il est accessible sinon None 
+                 (la modification n'est pas appliquée dans ce cas).
         """
         dossier = self._get_dossier(dossier)
         if dossier is None:
@@ -46,20 +52,31 @@ class ArchiveManager:
         self.dossier = dossier
         return self.dossier
 
+
+    ############################################################################
     def get_dossier_perso(self) -> str:
-        """Récupère le dossier personnel d'un utilisateur."""
+        """ Récupère le dossier personnel d'un utilisateur
+        """
         path = get_path_mesdocuments()
         if exists(path):
             return path
         return expanduser('~')
 
+
+    ############################################################################
     def _get_dossier(self, dossier: str) -> Optional[str]:
-        """Retourne le même dossier s'il est accessible en écriture, sinon None."""
+        """ Retourne le même dossier s'il est accessible en écriture, sinon None
+        """
         acces = os.access(dossier, os.W_OK)
         return dossier if acces else None
 
+
+    ############################################################################
     def get_most_recent_zip(self, prefix: str) -> Optional[str]:
-        """Récupère le fichier .zip de sauvegarde le plus récent."""
+        """ Récupère le fichier .zip de sauvegarde le plus récent
+            
+            Renvoie le nom du fichier
+        """
         max_mtime = 0
         file = None
         for filename in os.listdir(self.dossier):
@@ -71,6 +88,30 @@ class ArchiveManager:
                 max_mtime = mtime
         return file
 
+
+    ############################################################################
+    def get_profil_config(self, prefix: str, fichier_config: str = "") -> ProfilConfig:
+        """ Ouvre un fichier de configuration
+            et renvoie son ProfilConfig à partir du xml intégré
+        """
+        print("get_profil_config", fichier_config)
+        if fichier_config == "" or not isfile(fichier_config):
+            fichier_config = self.get_most_recent_zip(prefix)
+        
+        p = ProfilConfig()
+        
+        temp = TemporaryDirectory()
+        with zipfile.ZipFile(os.path.join(self.dossier, fichier_config), 'r') as myzip:
+            myzip.extract(save_process.CONFIG_FILE, temp.name)
+            
+        fichier_xml = os.path.join(temp.name, save_process.CONFIG_FILE)
+        print(fichier_xml)
+        p.restaurer_xml(fichier_xml)
+        print("   ", p)
+        return p
+    
+    
+    ############################################################################
     def to_zip(self, src_path: str, dest_zip: str) -> bool:
         """Archive un dossier dans un fichier .zip de destination.
 
@@ -82,6 +123,8 @@ class ArchiveManager:
                 myzip.write(f, os.path.relpath(f, start=src_path))
         return True
 
+
+    ############################################################################
     def from_zip(self, src_zip: str, dest_path: str) -> bool:
         """Décompresse une archive .zip vers un dossier.
 
@@ -91,3 +134,4 @@ class ArchiveManager:
         with zipfile.ZipFile(os.path.join(self.dossier, src_zip), 'r') as myzip:
             myzip.extractall(dest_path)
         return True
+

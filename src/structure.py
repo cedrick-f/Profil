@@ -111,7 +111,7 @@ class XMLMixin:
 
         nomerr: List[str] = []
 
-        def lect(branche: ET.Element, nom: str = ""):
+        def lect(branche: ET.Element, nom: str = "", num: int = -1):
             if nom[:2] == "S_":
                 return unescape(branche.get(nom))
 
@@ -130,18 +130,18 @@ class XMLMixin:
                 if sbranche is None:
                     return []
                 dic = {}
-
+                
                 # éléments "simples" : dans les items
                 for k, sb in sbranche.items():
                     _k = k.split("_")[-1]
                     dic[_k] = lect(sbranche, k)
 
-
                 # éléments plus complexes : comme sous-élément
-                for sb in sbranche:
+                for n, sb in enumerate(sbranche):
                     k = sb.tag
                     _k = k.split("_")[-1]
-                    dic[_k] = lect(sbranche, k)
+                    dic[_k+str(n)] = lect(sbranche, k, num = n)
+                
                 return [dic[v] for v in sorted(dic)]
 
             elif nom[:2] == "d_":
@@ -166,8 +166,10 @@ class XMLMixin:
                 return d
 
             else:
-                sbranche = branche.find(nom)
-                #classe = getattr(sys.modules[__name__], nom.split("_")[0])
+                if num >= 0:
+                    sbranche = branche.findall(nom)[num]
+                else:
+                    sbranche = branche.find(nom)
                 classe = get_class(nom.split("_")[0], "contenu")
                 obj, err = classe().from_xml(sbranche)
                 nomerr.extend(err)
