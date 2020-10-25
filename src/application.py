@@ -16,7 +16,7 @@ from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget, Splash
 from gui.center_tk_window import *
 from tkinter import Frame, Tk
 from archive import ArchiveManager
-from contenu import ProfilConfig
+from contenu import PROFILS
 
 class Application(Frame):
     """Fenêtre principale de l'application."""
@@ -25,8 +25,8 @@ class Application(Frame):
         super().__init__(master)
         
         self.manager = ArchiveManager()
-        self.profilConfig = ProfilConfig()
-        
+        self.profilConfig = PROFILS.copie()  # Par défaut : tous les éléments
+                
         self.workplace = WorkplaceWidget(self, self.manager)
         self.workplace.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
         
@@ -38,9 +38,6 @@ class Application(Frame):
         
         self.process = None
         self.pack(fill=tkinter.X, expand=1)
-        
-        
-        
         
         
         # Affichage d'un splash screen d'avertissement

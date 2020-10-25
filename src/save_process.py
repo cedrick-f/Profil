@@ -40,7 +40,7 @@ class SaveProcess(Thread):
         print("Sauvegarde dans", temp.name)
         try:
             self.queue.put(msg.get('save'))
-            self.profil_config.sauver(temp.name)
+            print("   ", self.profil_config.sauver(temp.name))
             self.profil_config.sauver_xml(join(temp.name, CONFIG_FILE))
             self.manager.to_zip(temp.name, filename)
         finally:

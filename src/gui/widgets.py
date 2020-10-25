@@ -58,15 +58,17 @@ class ConfigWidget(Frame):
 
     def __init__(self, parent: Frame, profilConfig: ProfilConfig):
         Frame.__init__(self, parent)
+        self.profilConfig = profilConfig
+        
         self.bool_vars: Dict[str, List[BooleanVar, Dict[BooleanVar]]] = {}
         
         # Les groupes ...
-        for nom_grp, groupe in PROFILS.items():
+        for groupe in PROFILS.groups:
             bool_var = BooleanVar()
-            checkbutton = Checkbutton(self, text=nom_grp, 
+            checkbutton = Checkbutton(self, text=groupe.nom, 
                                       variable=bool_var,
-                                      command = lambda n=nom_grp: self.manage_buttons(n))
-            self.bool_vars[nom_grp] = [bool_var, {}]
+                                      command = lambda n=groupe.nom: self.manage_buttons(n))
+            self.bool_vars[groupe.nom] = [bool_var, {}]
             checkbutton.pack(anchor = "w")
             
             # Les éléments ...
@@ -76,14 +78,12 @@ class ConfigWidget(Frame):
                     checkbutton = Checkbutton(self, text=elem.name, 
                                               variable=bool_var,
                                               command = lambda: self.manage_buttons(elem.name))
-                    self.bool_vars[nom_grp][1][elem.name] = bool_var
+                    self.bool_vars[groupe.nom][1][elem.name] = bool_var
                     checkbutton.pack(anchor = "w", padx = (20, 0))
     
     
     def manage_buttons(self, nom):
-        print("click", nom)
         for n, l in self.bool_vars.items():
-            print("  ", n)
             bv, d = l
             if len(d) > 0:
                 if nom == n:
@@ -95,15 +95,35 @@ class ConfigWidget(Frame):
                     bv.set(False)
         
         
-    def get_config(self) -> List[str]:
-        profils: List[str] = []
-        for key, var in self.bool_vars.items():
-            if var.get():
-                profils.append(key)
+#     def get_config(self) -> List[str]:
+#         profils: List[str] = []
+#         for key, var in self.bool_vars.items():
+#             if var.get():
+#                 profils.append(key)
+#         return profils
+
+    def get_config(self) -> Dict[str, List[str]]:
+        """ Renvoie les éléments à sauvegarder/restaurer
+            sous la forme :
+            { 'nom_groupe1' : [],  
+              'nom_groupe2' : ['nom_elem1', ' nomelem2']
+            }
+            (liste vide = tous les éléments du groupe)
+        """
+        profils: Dict[str, List[str]] = {}
+        for nom_grp, l in self.bool_vars.items():
+            bv, d = l
+            if bv.get():
+                profils[nom_grp] = [] # = tous les éléments !!
+            if len(d) > 1:
+                for nom_elem, b in d.items():
+                    if b.get():
+                        profils[nom_grp].append(nom_elem)
         return profils
 
 
-
+    def set_config(self):
+        self.profilConfig.set_config(self.get_config())
 
 
 

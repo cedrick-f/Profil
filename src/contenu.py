@@ -11,6 +11,8 @@
 
 import glob
 import shutil
+import time
+from typing import Dict
 # Modules "python"
 from os import path
 
@@ -23,22 +25,55 @@ class ProfilConfig(XMLMixin):
     def __init__(self, nom: str = "monProfil"):
         super(ProfilConfig, self).__init__()
         self.nom = nom
-        self.groups: List[ProfilGroup] = list(PROFILS.values())
+        self.groups: List[ProfilGroup] = []#list(PROFILS.values())
 
     ############################################################################
     def __repr__(self) -> str:
         return "ProfilConfig :\n\t" + "\n\t".join(g.__repr__() for g in self.groups)
     
+    
+    ############################################################################
+    def copie(self):
+        pc = ProfilConfig(self.nom)
+        for g in self.groups:
+            pc.groups.append(g.copie())
+        return pc
+    
+    ############################################################################
+    def get_group(self, nom):
+        for g in self.groups:
+            if g.nom == nom:
+                return g
+    
     ############################################################################
     def set_grps(self, lst_grp):
+        print("set_grps", lst_grp)
         self.groups = []
         for g in lst_grp:
-            self.add_grp(g)
+            self.add_grp(PROFILS.get_group(g))
+        print(">>>", self)
+            
+#     ############################################################################
+#     def set_config(self, lst_grp):
+#         self.groups = []
+#         for g in lst_grp:
+#             self.add_grp(g)
             
     ############################################################################
-    def add_grp(self, nom):
-        if nom in PROFILS and not PROFILS[nom] in self.groups:
-            self.groups.append(PROFILS[nom])
+    def set_config(self, profils: Dict[str, List[str]]):
+        print("set_config")
+        self.groups = []
+        for grp in PROFILS.groups:
+            if grp.nom in profils:
+                pg = ProfilGroup(grp.nom)
+                pg.set_config(profils[grp.nom])
+                self.groups.append(pg)
+        print(">>>", self)
+    
+    
+    ############################################################################
+    def add_grp(self, grp):
+        self.groups.append(grp)
         
     ############################################################################
     def rmv_grp(self, nom):
@@ -81,6 +116,22 @@ class ProfilGroup(XMLMixin):
     def __repr__(self) -> str:
         return "ProfilGroup :\n\t\t" + "\n\t\t".join(e.__repr__() for e in self.lst_elem)
 
+
+    ############################################################################
+    def copie(self):
+        pg = ProfilGroup(self.nom)
+        for e in self.lst_elem:
+            pg.lst_elem.append(e.copie())
+        return pg
+    
+    ############################################################################
+    def set_config(self, profil: List[str]):
+        self.lst_elem = []
+        for elem in PROFILS.groups[self.nom]:
+            if elem.name in profil:
+                pe = elem.copie()
+                self.lst_elem.append(pe)
+                
     ############################################################################
     def add_elem(self, name: Optional[str] = "", path: Optional[str] = None, mode: int = 0):
         self.lst_elem.append(ProfilElem(name, path, mode))
@@ -144,6 +195,12 @@ class ProfilElem(XMLMixin):
     def __repr__(self) -> str:
         return "ProfilElem : "+ self.path + " (mode " + str(self.mode)+")"
 
+
+    ############################################################################
+    def copie(self):
+        pe = ProfilElem(self.name, self.path, self.mode)
+        return pe
+    
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
         """Copie les fichiers du contenu vers le dossier de destination.
@@ -153,12 +210,18 @@ class ProfilElem(XMLMixin):
         :raises:
             FileExistsError: si dest existe déjà
         """
+        print("sauver Elem", self.path)
         fail: List[str] = []
+        
+        
         if self.mode == 0:
             shutil.copy2(self.path, dest)
 
         elif self.mode == 1:
             try:
+                if not os.access(self.path, os.W_OK):
+                    fail.append(self.path)
+                    return fail
                 shutil.rmtree(dest)
                 shutil.copytree(self.path, dest)    # py3.8 : , dirs_exist_ok = True)
             except shutil.Error as exc:
@@ -170,6 +233,7 @@ class ProfilElem(XMLMixin):
 
         elif self.mode == 2:
             for f in glob.glob(self.path):
+                print("   ", f)
                 shutil.copy2(f, dest)
                 
         elif self.mode == 3:
@@ -189,6 +253,7 @@ class ProfilElem(XMLMixin):
         try:
             if path.exists(self.path):
                 shutil.rmtree(self.path, True)
+                time.sleep(0.1) # Pour éviter les erreurs d'accès refusé par copytree
 
 
             if self.mode == 0:
@@ -228,14 +293,19 @@ __FF.add_elem("Local", os.path.join(os.environ['LOCALAPPDATA'], 'Mozilla','Firef
 __BUR = ProfilGroup("Bureau")
 __BUR.add_elem(None, os.path.join(os.environ['USERPROFILE'], "Desktop","*.lnk"), 2)
 
+
+# Un dossier pour faire des tests en toute sécurité
 __TEST = ProfilGroup("Test")
 __TEST.add_elem(None, os.path.join(os.environ['USERPROFILE'], "Desktop", "Test"), 1)
-# PROFILS = ProfilConfig()
-# PROFILS.add_grp(__FF)
-# PROFILS.add_grp(__BUR)
-PROFILS = {"FireFox" : __FF,
-            "Bureau" : __BUR,
-            "Test" : __TEST}
+
+
+PROFILS = ProfilConfig()
+PROFILS.add_grp(__FF)
+PROFILS.add_grp(__BUR)
+PROFILS.add_grp(__TEST)
+# PROFILS = {"FireFox" : __FF,
+#             "Bureau" : __BUR,
+#             "Test" : __TEST}
 
 ################################################################################
 
