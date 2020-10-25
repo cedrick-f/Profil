@@ -39,7 +39,7 @@ class SaveProcess(Thread):
         filename = SaveProcess.BASENAME + str(date.today()) + '.zip'
         print("Sauvegarde dans", temp.name)
         try:
-            self.queue.put(msg.get('save'))
+            self.queue.put(msg.get('saving'))
             print("   ", self.profil_config.sauver(temp.name))
             self.profil_config.sauver_xml(join(temp.name, CONFIG_FILE))
             self.manager.to_zip(temp.name, filename)
@@ -64,7 +64,7 @@ class RestoreProcess(SaveProcess):
             self.queue.put(msg.get('parse'))
             self.profil_config.restaurer_xml(join(temp.name, CONFIG_FILE))
 
-            self.queue.put(msg.get('restore'))
+            self.queue.put(msg.get('restoring'))
             self.profil_config.restaurer(temp.name)
         finally:
             self.queue.put(None)

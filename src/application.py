@@ -39,6 +39,7 @@ class Application(Frame):
         self.process = None
         self.pack(fill=tkinter.X, expand=1)
         
+
         
         # Affichage d'un splash screen d'avertissement
         master.withdraw()

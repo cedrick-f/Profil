@@ -69,6 +69,7 @@ class ConfigWidget(Frame):
                                       variable=bool_var,
                                       command = lambda n=groupe.nom: self.manage_buttons(n))
             self.bool_vars[groupe.nom] = [bool_var, {}]
+            bool_var.set(groupe.nom in self.profilConfig.get_names())
             checkbutton.pack(anchor = "w")
             
             # Les éléments ...
@@ -79,6 +80,7 @@ class ConfigWidget(Frame):
                                               variable=bool_var,
                                               command = lambda: self.manage_buttons(elem.name))
                     self.bool_vars[groupe.nom][1][elem.name] = bool_var
+                    bool_var.set(elem.name in self.profilConfig.get_group(groupe.nom).get_names())
                     checkbutton.pack(anchor = "w", padx = (20, 0))
     
     

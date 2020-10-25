@@ -46,6 +46,12 @@ class ProfilConfig(XMLMixin):
                 return g
     
     ############################################################################
+    def get_names(self):
+        return [g.nom for g in self.groups]
+    
+    
+    
+    ############################################################################
     def set_grps(self, lst_grp):
         print("set_grps", lst_grp)
         self.groups = []
@@ -124,6 +130,12 @@ class ProfilGroup(XMLMixin):
             pg.lst_elem.append(e.copie())
         return pg
     
+    
+    ############################################################################
+    def get_names(self):
+        return [e.name for e in self.lst_elem]
+    
+    
     ############################################################################
     def set_config(self, profil: List[str]):
         self.lst_elem = []
@@ -131,10 +143,12 @@ class ProfilGroup(XMLMixin):
             if elem.name in profil:
                 pe = elem.copie()
                 self.lst_elem.append(pe)
-                
+    
+    
     ############################################################################
     def add_elem(self, name: Optional[str] = "", path: Optional[str] = None, mode: int = 0):
         self.lst_elem.append(ProfilElem(name, path, mode))
+
 
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
