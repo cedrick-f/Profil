@@ -13,7 +13,7 @@ import glob
 import os
 import zipfile
 from os.path import exists, expanduser, getmtime, splitext
-from typing import Optional
+from typing import Optional, List
 from contenu import ProfilConfig
 from tempfile import TemporaryDirectory
 import save_process
@@ -88,16 +88,31 @@ class ArchiveManager:
                 max_mtime = mtime
         return file
 
-
+    ############################################################################
+    def get_all_zip(self, prefix: str) -> List[str]:
+        """ Récupère les fichiers .zip de sauvegarde
+            
+            Renvoie la liste des noms de fichier
+        """
+        lst_file = []
+        for filename in os.listdir(self.dossier):
+            if not filename.startswith(prefix) or splitext(filename)[1] != '.zip':
+                continue
+            mtime = getmtime(os.path.join(self.dossier, filename))
+            lst_file.append((mtime, filename))
+        lst_file.sort(reverse = True)
+        return [f[1] for f in lst_file]
+    
+    
     ############################################################################
     def get_profil_config(self, prefix: str, fichier_config: str = "") -> ProfilConfig:
         """ Ouvre un fichier de configuration
             et renvoie son ProfilConfig à partir du xml intégré
         """
         print("get_profil_config", fichier_config)
-        if fichier_config == "" or not isfile(fichier_config):
+        if fichier_config == "" or not isfile(os.path.join(self.dossier, fichier_config)):
             fichier_config = self.get_most_recent_zip(prefix)
-        
+        print("  ", fichier_config)
         p = ProfilConfig()
         
         temp = TemporaryDirectory()
@@ -105,9 +120,9 @@ class ArchiveManager:
             myzip.extract(save_process.CONFIG_FILE, temp.name)
             
         fichier_xml = os.path.join(temp.name, save_process.CONFIG_FILE)
-        print(fichier_xml)
+#         print(fichier_xml)
         p.restaurer_xml(fichier_xml)
-        print("   ", p)
+#         print("   ", p)
         return p
     
     

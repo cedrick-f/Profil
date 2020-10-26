@@ -9,7 +9,6 @@
 #
 ################################################################################
 
-from save_process import SaveProcess
 from save_process import RestoreProcess, SaveProcess
 from messages import msg
 from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget, Splash
@@ -29,7 +28,7 @@ class Application(Frame):
         self.profilConfigSave = PROFILS.copie()  # Par défaut : tous les éléments
         self.profilConfigRest = self.manager.get_profil_config(SaveProcess.BASENAME)
                 
-        self.workplace = WorkplaceWidget(self, self.manager)
+        self.workplace = WorkplaceWidget(self, self.manager, self.update_profileR)
 #         self.workplace.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
         self.workplace.grid(row=0, column=0, columnspan = 2, 
                             padx = 5, pady = 5,
@@ -76,10 +75,10 @@ class Application(Frame):
         self.process = SaveProcess(self.manager, self.profilConfigSave)
         self.process.start()
         self.update_status()
-
+        self.workplace.update()
 
     def handle_restore(self):
-        self.profilConfigRest.set_grps(self.configR.get_config()) ## ne sert à rien ... à revoir
+        self.profilConfigRest.set_grps(self.configR.get_config())
         self.process = RestoreProcess(self.manager, self.profilConfigRest)
         self.process.start()
         self.update_status()
@@ -96,8 +95,15 @@ class Application(Frame):
             self.master.after(150, self.update_status)
 
 
+    def update_profileR(self, fichier_config: str):
+        self.profilConfigRest = self.manager.get_profil_config(SaveProcess.BASENAME,
+                                                               fichier_config = fichier_config)
+        self.configR.setProfilConfig(self.profilConfigRest)
+        self.configR.update()
     
-    
+
+
+
 if __name__ == '__main__':
     root = Tk()
     root.title(msg.get('title'))
