@@ -108,11 +108,12 @@ class ArchiveManager:
     def get_profil_config(self, prefix: str, fichier_config: str = "") -> ProfilConfig:
         """ Ouvre un fichier de configuration
             et renvoie son ProfilConfig à partir du xml intégré
+            
+            Renvoie None si aucun fichier valide n'a  été trouvé.
         """
         print("get_profil_config", fichier_config)
         if fichier_config == "" or not isfile(os.path.join(self.dossier, fichier_config)):
             fichier_config = self.get_most_recent_zip(prefix)
-        print("  ", fichier_config)
         p = ProfilConfig()
         
         temp = TemporaryDirectory()
@@ -121,8 +122,12 @@ class ArchiveManager:
             
         fichier_xml = os.path.join(temp.name, save_process.CONFIG_FILE)
 #         print(fichier_xml)
-        p.restaurer_xml(fichier_xml)
-#         print("   ", p)
+        try:
+            p.restaurer_xml(fichier_xml)
+        except:
+            print("ERROR")
+            return
+        print("   ", p)
         return p
     
     

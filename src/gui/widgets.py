@@ -101,7 +101,7 @@ class ConfigWidget(Frame):
                     self.bool_vars[groupe.nom][1][elem.name] = bool_var
                     self.chk_btn[groupe.nom][1][elem.name] = checkbutton
                     
-                    grp = self.profilConfig.get_group(groupe.nom)
+                    #grp = self.profilConfig.get_group(groupe.nom)
 #                     if grp is not None and elem.name in grp.get_names():
 #                         checkbutton.configure(state='normal')
 #                         bool_var.set(True)
@@ -141,6 +141,7 @@ class ConfigWidget(Frame):
             }
             (liste vide = tous les éléments du groupe)
         """
+#         print("get_config")
         profils: Dict[str, List[str]] = {}
         for nom_grp, l in self.bool_vars.items():
             bv, d = l
@@ -150,6 +151,7 @@ class ConfigWidget(Frame):
                 for nom_elem, b in d.items():
                     if b.get():
                         profils[nom_grp].append(nom_elem)
+#         print("  ", profils)
         return profils
 
 
@@ -164,9 +166,10 @@ class ConfigWidget(Frame):
     def update(self):
         """ Mise à jour de l'état des checkbuttons
         """
-        print("update")
+#         print("update", self.profilConfig)
         for groupe in PROFILS.groups:
-            if groupe.nom in self.profilConfig.get_names():
+            if self.profilConfig is not None \
+              and groupe.nom in self.profilConfig.get_names():
                 self.chk_btn[groupe.nom][0].configure(state='normal')
                 self.bool_vars[groupe.nom][0].set(True)
             else:
@@ -176,7 +179,10 @@ class ConfigWidget(Frame):
             # Les éléments ...
             if len(groupe.lst_elem) > 1:
                 for elem in groupe.lst_elem:
-                    grp = self.profilConfig.get_group(groupe.nom)
+                    if self.profilConfig is not None:
+                        grp = self.profilConfig.get_group(groupe.nom)
+                    else:
+                        grp = None
                     if grp is not None and elem.name in grp.get_names():
                         self.chk_btn[groupe.nom][1][elem.name].configure(state='normal')
                         self.bool_vars[groupe.nom][1][elem.name].set(True)
@@ -187,7 +193,9 @@ class ConfigWidget(Frame):
 
 #################################################################################################
 class WorkplaceWidget(Frame):
-    """Interface pour choisir le répertoire de sauvegarde."""
+    """ Interface pour choisir le répertoire de sauvegarde
+        et le fichier à restaurer
+    """
 
     def __init__(self, parent: Frame, manager: ArchiveManager, update_fn: Callable[[], None]):
         Frame.__init__(self, parent)
@@ -208,18 +216,19 @@ class WorkplaceWidget(Frame):
         
         self.lst_prof = ttk.Combobox(self, values=self.manager.get_all_zip(SaveProcess.BASENAME))
         self.lst_prof.grid(row=2, column=0, columnspan = 2,
-                             sticky="nswe")
+                           padx = 5, pady = 5,
+                           sticky="nswe")
         self.lst_prof.current(0)
         self.lst_prof.bind("<<ComboboxSelected>>", lambda x: self.update_profileR())
         
         self.columnconfigure(0, weight=1)
-        #self.columnconfigure(0, weight=1)
         
 
     def handle_browse_click(self):
         directory = askdirectory()
         if len(directory) > 0:
             self.check_dossier(directory)
+        
         
     def handle_text_change(self):
         directory = self.folder_path.get()
@@ -236,13 +245,23 @@ class WorkplaceWidget(Frame):
 
 
     def update_profileR(self):
-        print("update_profileR", self.lst_prof.get())
+        """ Mise à jour du widget de configuration de restauration
+        """
+#         print("update_profileR", self.lst_prof.get())
         self.update_fn(fichier_config = self.lst_prof.get())
 
 
     def update(self):
+        """ Mise à jour de liste déroulante
+            puis du widget de configuration de restauration
+        """
+        print("update workplace")
         self.lst_prof['values'] = self.manager.get_all_zip(SaveProcess.BASENAME)
+        self.lst_prof.current(0)
         self.update_profileR()
+
+
+
 
 #################################################################################################
 class Splash(Toplevel):

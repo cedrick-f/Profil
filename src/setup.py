@@ -31,7 +31,7 @@ shutil.rmtree("build", ignore_errors=True)
 #################################################################################################
 
 includefiles = ['gui/']
-
+includefiles.extend(["../VCRUNTIME140.dll"])
     
 
 # Dependencies are automatically detected, but it might need fine tuning.

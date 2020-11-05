@@ -71,17 +71,19 @@ class Application(Frame):
         #self.after(100, self.pack)
     
     def handle_save(self):
-        self.profilConfigSave.set_grps(self.configS.get_config())
+#         self.profilConfigSave.set_grps(self.configS.get_config())
+        self.configS.set_config()
         self.process = SaveProcess(self.manager, self.profilConfigSave)
         self.process.start()
         self.update_status()
         self.workplace.update()
 
     def handle_restore(self):
-        self.profilConfigRest.set_grps(self.configR.get_config())
-        self.process = RestoreProcess(self.manager, self.profilConfigRest)
-        self.process.start()
-        self.update_status()
+        if self.profilConfigRest is not None:
+            self.profilConfigRest.set_config(self.configR.get_config())
+            self.process = RestoreProcess(self.manager, self.profilConfigRest)
+            self.process.start()
+            self.update_status()
 
 
     def update_status(self):
@@ -98,7 +100,8 @@ class Application(Frame):
     def update_profileR(self, fichier_config: str):
         self.profilConfigRest = self.manager.get_profil_config(SaveProcess.BASENAME,
                                                                fichier_config = fichier_config)
-        self.configR.setProfilConfig(self.profilConfigRest)
+        if self.profilConfigRest is not None:
+            self.configR.setProfilConfig(self.profilConfigRest)
         self.configR.update()
     
 

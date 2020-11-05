@@ -37,11 +37,13 @@ class SaveProcess(Thread):
     def run(self):
         temp = TemporaryDirectory()
         filename = SaveProcess.BASENAME + str(date.today()) + '.zip'
-        print("Sauvegarde dans", temp.name)
+#         print("Sauvegarde de", self.profil_config)
+#         print("    dans", temp.name)
         try:
             self.queue.put(msg.get('saving'))
-            print("   ", self.profil_config.sauver(temp.name))
+            self.profil_config.sauver(temp.name)
             self.profil_config.sauver_xml(join(temp.name, CONFIG_FILE))
+            self.queue.put(msg.get('unzipping'))
             self.manager.to_zip(temp.name, filename)
         finally:
             self.queue.put(None)
@@ -53,15 +55,15 @@ class RestoreProcess(SaveProcess):
     def __init__(self, manager: ArchiveManager, profil_config: ProfilConfig):
         super().__init__(manager, profil_config)
         self.profil_config = profil_config
-        print(self.profil_config)
+#         print(self.profil_config)
         self.manager = manager
 
     def run(self):
         temp = TemporaryDirectory()
         zip_path = self.manager.get_most_recent_zip(SaveProcess.BASENAME)
-        print("Restauration de :", self.profil_config)
+#         print("Restauration de :", self.profil_config)
         try:
-            self.queue.put(msg.get('unzip'))
+            self.queue.put(msg.get('unzipping'))
             self.manager.from_zip(zip_path, temp.name)
 
 #             self.queue.put(msg.get('parse'))

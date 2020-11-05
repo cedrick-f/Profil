@@ -51,13 +51,13 @@ class ProfilConfig(XMLMixin):
     
     
     
-    ############################################################################
-    def set_grps(self, lst_grp):
-#         print("set_grps", lst_grp)
-        self.groups = []
-        for g in lst_grp:
-            self.add_grp(PROFILS.get_group(g))
-#         print(">>>", self)
+#     ############################################################################
+#     def set_grps(self, lst_grp):
+# #         print("set_grps", lst_grp)
+#         self.groups = []
+#         for g in lst_grp:
+#             self.add_grp(PROFILS.get_group(g))
+# #         print(">>>", self)
             
 #     ############################################################################
 #     def set_config(self, lst_grp):
@@ -67,6 +67,9 @@ class ProfilConfig(XMLMixin):
             
     ############################################################################
     def set_config(self, profils: Dict[str, List[str]]):
+        """ Modifie la configuration (groupes et éléments sélectionnés)
+            en utilisant la structure fournie par ConfigWidget.get_config()
+        """
 #         print("set_config")
         self.groups = []
         for grp in PROFILS.groups:
@@ -80,12 +83,14 @@ class ProfilConfig(XMLMixin):
     ############################################################################
     def add_grp(self, grp):
         self.groups.append(grp)
-        
+    
+    
     ############################################################################
     def rmv_grp(self, nom):
         if PROFILS[nom] in self.groups:
             self.groups.remove(PROFILS[nom])
-        
+    
+    
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
         fail: List[str] = []
@@ -95,6 +100,7 @@ class ProfilConfig(XMLMixin):
             os.makedirs(subfolder)
             fail.extend(g.sauver(subfolder))
         return fail
+    
     
     ############################################################################
     def restaurer(self, source: str) -> List[str]:
@@ -138,8 +144,11 @@ class ProfilGroup(XMLMixin):
     
     ############################################################################
     def set_config(self, profil: List[str]):
+        """ Modifie la configuration (éléments sélectionnés)
+            en utilisant la structure fournie par ConfigWidget.get_config()
+        """
         self.lst_elem = []
-        for elem in PROFILS.groups[self.nom]:
+        for elem in PROFILS.get_group(self.nom).lst_elem:
             if elem.name in profil:
                 pe = elem.copie()
                 self.lst_elem.append(pe)
@@ -317,7 +326,7 @@ __TEST.add_elem("", os.path.join(os.environ['USERPROFILE'], "Desktop", "Test"), 
 PROFILS = ProfilConfig()
 PROFILS.add_grp(__FF)
 PROFILS.add_grp(__BUR)
-PROFILS.add_grp(__TEST)
+#PROFILS.add_grp(__TEST)
 # PROFILS = {"FireFox" : __FF,
 #             "Bureau" : __BUR,
 #             "Test" : __TEST}

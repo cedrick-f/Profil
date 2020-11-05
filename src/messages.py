@@ -9,7 +9,8 @@ msg = {
     'restore': 'Restaurer',
     'restoring': 'Restauration',
     'browse': 'Parcourir',
-    'unzip': 'Décompression de l\'archive',
+    'zipping': 'Compression de l\'archive',
+    'unzipping': 'Décompression de l\'archive',
     'parse': 'Lecture des fichiers',
     'avertissement': """Sauve Ton Profil (STP) est une application
     de sauvegarde/restauration de profils utilisateur.
