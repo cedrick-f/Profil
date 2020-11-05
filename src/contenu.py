@@ -94,7 +94,7 @@ class ProfilConfig(XMLMixin):
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
         fail: List[str] = []
-        
+#         print("Sauver Config:", self.nom)
         for g in self.groups:
             subfolder = os.path.join(dest, g.nom)
             os.makedirs(subfolder)
@@ -149,7 +149,7 @@ class ProfilGroup(XMLMixin):
         """
         self.lst_elem = []
         for elem in PROFILS.get_group(self.nom).lst_elem:
-            if elem.name in profil:
+            if elem.name in profil or len(profil) == 0:
                 pe = elem.copie()
                 self.lst_elem.append(pe)
     
@@ -162,8 +162,10 @@ class ProfilGroup(XMLMixin):
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
         fail: List[str] = []
+#         print("Sauver Groupe:", self.nom)
         for g in self.lst_elem:
-            if g.name is "":
+            print("  ", g.name)
+            if g.name == "":
                 fail.extend(g.sauver(dest))
 
             else:
@@ -178,7 +180,7 @@ class ProfilGroup(XMLMixin):
         """ Restaure les fichiers du dossier source vers le dossier d'origine
             Renvoie la liste des fichiers qui n'ont pas été copiés
         """
-        print("restaurer", self, source)
+#         print("restaurer", self, source)
         fail: List[str] = []
         for group in self.lst_elem:
             if group.name is None:
@@ -234,7 +236,7 @@ class ProfilElem(XMLMixin):
         :raises:
             FileExistsError: si dest existe déjà
         """
-        print("sauver Elem", self.path)
+#         print("sauver Elem", self.path)
         fail: List[str] = []
         
         
@@ -257,7 +259,7 @@ class ProfilElem(XMLMixin):
 
         elif self.mode == 2:
             for f in glob.glob(self.path):
-                print("   ", f)
+#                 print("   ", f)
                 shutil.copy2(f, dest)
                 
         elif self.mode == 3:
@@ -272,7 +274,7 @@ class ProfilElem(XMLMixin):
             Renvoie la liste des fichiers qui n'ont pas été copiés
         """
         fail: List[str] = []
-        print("restaurer", source, self.path)
+#         print("restaurer", source, self.path)
         
         try:
             if path.exists(self.path):
@@ -288,7 +290,7 @@ class ProfilElem(XMLMixin):
 
             elif self.mode == 2:
                 for f in glob.glob(os.path.join(source, "**")):
-                    print(f, glob.glob(os.path.join(source, "**")))
+#                     print(f, glob.glob(os.path.join(source, "**")))
                     shutil.copy2(f, self.path.split("*")[0])
 
             elif self.mode == 3:

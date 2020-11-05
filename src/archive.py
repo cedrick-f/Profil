@@ -11,6 +11,7 @@
 
 import glob
 import os
+import time
 import zipfile
 from os.path import exists, expanduser, getmtime, splitext
 from typing import Optional, List
@@ -21,6 +22,7 @@ import save_process
 # bibliothèque à installer : pip install pywin32
 from win32com.shell import shell, shellcon
 from genericpath import isfile
+from zipfile import BadZipfile
 
 def get_path_mesdocuments():
     try:
@@ -111,14 +113,23 @@ class ArchiveManager:
             
             Renvoie None si aucun fichier valide n'a  été trouvé.
         """
-        print("get_profil_config", fichier_config)
+#         print("get_profil_config", fichier_config)
         if fichier_config == "" or not isfile(os.path.join(self.dossier, fichier_config)):
             fichier_config = self.get_most_recent_zip(prefix)
-        p = ProfilConfig()
+        fichier_config = os.path.join(self.dossier, fichier_config)
         
         temp = TemporaryDirectory()
-        with zipfile.ZipFile(os.path.join(self.dossier, fichier_config), 'r') as myzip:
-            myzip.extract(save_process.CONFIG_FILE, temp.name)
+        
+        p = ProfilConfig()
+#         time.sleep(0.1) # Pour éviter les erreurs ???
+#         print("   ", fichier_config)
+        try:
+            with zipfile.ZipFile(fichier_config, 'r') as myzip:
+                myzip.extract(save_process.CONFIG_FILE, temp.name)
+        except zipfile.BadZipfile: # Deuxième tentative ...
+            print("2ème essai lecture zip :", fichier_config)
+            with zipfile.ZipFile(fichier_config, 'r') as myzip:
+                myzip.extract(save_process.CONFIG_FILE, temp.name)
             
         fichier_xml = os.path.join(temp.name, save_process.CONFIG_FILE)
 #         print(fichier_xml)
@@ -127,7 +138,7 @@ class ArchiveManager:
         except:
             print("ERROR")
             return
-        print("   ", p)
+        #print("   ", p)
         return p
     
     
