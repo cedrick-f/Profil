@@ -218,7 +218,10 @@ class WorkplaceWidget(Frame):
         self.lst_prof.grid(row=2, column=0, columnspan = 2,
                            padx = 5, pady = 5,
                            sticky="nswe")
-        self.lst_prof.current(0)
+        try:
+            self.lst_prof.current(0)
+        except:
+            pass
         self.lst_prof.bind("<<ComboboxSelected>>", lambda x: self.update_profileR())
         
         self.columnconfigure(0, weight=1)
@@ -257,7 +260,10 @@ class WorkplaceWidget(Frame):
         """
         print("update workplace")
         self.lst_prof['values'] = self.manager.get_all_zip()
-        self.lst_prof.current(0)
+        try:
+            self.lst_prof.current(0)
+        except:
+            pass
         self.update_profileR()
 
 

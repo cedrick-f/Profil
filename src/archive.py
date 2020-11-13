@@ -124,22 +124,23 @@ class ArchiveManager:
 #         print("get_profil_config", fichier_config)
         if fichier_config == "" or not isfile(os.path.join(self.dossier, fichier_config)):
             fichier_config = self.get_most_recent_zip()
-        if fichier_config is None:
-            fichier_config = self.get_archive_name()
-        fichier_config = os.path.join(self.dossier, fichier_config)
+#         if fichier_config is None:
+#             fichier_config = self.get_archive_name()
         
         temp = TemporaryDirectory()
         
         p = ProfilConfig()
 #         time.sleep(0.1) # Pour éviter les erreurs ???
 #         print("   ", fichier_config)
-        try:
-            with zipfile.ZipFile(fichier_config, 'r') as myzip:
-                myzip.extract(save_process.CONFIG_FILE, temp.name)
-        except zipfile.BadZipfile: # Deuxième tentative ...
-            print("2ème essai lecture zip :", fichier_config)
-            with zipfile.ZipFile(fichier_config, 'r') as myzip:
-                myzip.extract(save_process.CONFIG_FILE, temp.name)
+        if fichier_config is not None:
+            fichier_config = os.path.join(self.dossier, fichier_config)
+            try:
+                with zipfile.ZipFile(fichier_config, 'r') as myzip:
+                    myzip.extract(save_process.CONFIG_FILE, temp.name)
+            except zipfile.BadZipfile: # Deuxième tentative ...
+                print("2ème essai lecture zip :", fichier_config)
+                with zipfile.ZipFile(fichier_config, 'r') as myzip:
+                    myzip.extract(save_process.CONFIG_FILE, temp.name)
             
         fichier_xml = os.path.join(temp.name, save_process.CONFIG_FILE)
 #         print(fichier_xml)
