@@ -124,6 +124,8 @@ class ArchiveManager:
 #         print("get_profil_config", fichier_config)
         if fichier_config == "" or not isfile(os.path.join(self.dossier, fichier_config)):
             fichier_config = self.get_most_recent_zip()
+        if fichier_config is None:
+            fichier_config = self.get_archive_name()
         fichier_config = os.path.join(self.dossier, fichier_config)
         
         temp = TemporaryDirectory()
