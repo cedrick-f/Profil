@@ -26,7 +26,7 @@ class Application(Frame):
         
         self.manager = ArchiveManager()
         self.profilConfigSave = PROFILS.copie()  # Par défaut : tous les éléments
-        self.profilConfigRest = self.manager.get_profil_config(SaveProcess.BASENAME)
+        self.profilConfigRest = self.manager.get_profil_config()
                 
         self.workplace = WorkplaceWidget(self, self.manager, self.update_profileR)
 #         self.workplace.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
@@ -64,7 +64,7 @@ class Application(Frame):
         master.withdraw()
         splash = Splash(self)
         
-        self.after(1000, splash.destroy)
+        self.after(2000, splash.destroy)
         master.deiconify()
         splash.lift()
         center_on_screen(splash)
@@ -98,8 +98,7 @@ class Application(Frame):
 
 
     def update_profileR(self, fichier_config: str):
-        self.profilConfigRest = self.manager.get_profil_config(SaveProcess.BASENAME,
-                                                               fichier_config = fichier_config)
+        self.profilConfigRest = self.manager.get_profil_config(fichier_config = fichier_config)
         if self.profilConfigRest is not None:
             self.configR.setProfilConfig(self.profilConfigRest)
         self.configR.update()

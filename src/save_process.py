@@ -9,7 +9,7 @@
 #
 ################################################################################
 
-from datetime import date
+
 from os.path import join
 from queue import Queue
 from shutil import rmtree
@@ -26,7 +26,7 @@ CONFIG_FILE = 'config.xml'
 
 class SaveProcess(Thread):
     """Définit un processus de sauvegarde."""
-    BASENAME = 'profile-save-'
+    
 
     def __init__(self, manager: ArchiveManager, profil_config: ProfilConfig):
         super().__init__()
@@ -36,7 +36,7 @@ class SaveProcess(Thread):
 
     def run(self):
         temp = TemporaryDirectory()
-        filename = SaveProcess.BASENAME + str(date.today()) + '.zip'
+        filename = self.manager.get_archive_name()
 #         print("Sauvegarde de", self.profil_config)
 #         print("    dans", temp.name)
         try:
@@ -60,7 +60,7 @@ class RestoreProcess(SaveProcess):
 
     def run(self):
         temp = TemporaryDirectory()
-        zip_path = self.manager.get_most_recent_zip(SaveProcess.BASENAME)
+        zip_path = self.manager.get_most_recent_zip()
 #         print("Restauration de :", self.profil_config)
         try:
             self.queue.put(msg.get('unzipping'))
@@ -73,6 +73,8 @@ class RestoreProcess(SaveProcess):
             self.profil_config.restaurer(temp.name)
         finally:
             self.queue.put(None)
+
+
 
 
 if __name__ == "__main__":

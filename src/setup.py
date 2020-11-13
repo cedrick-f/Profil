@@ -18,7 +18,7 @@ Script pour générer un pack avec executable :
     .../python setup.py build
 """
     
-PATH_PYTHON36 = "C:/Users/Cedrick/AppData/Local/Programs/Python/Python36-32"
+PATH_PYTHON36 = "C:/Users/Cedrick/AppData/Local/Programs/Python/Python37-32"
 
 import sys, os
     

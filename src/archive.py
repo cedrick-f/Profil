@@ -12,6 +12,7 @@
 import glob
 import os
 import time
+from datetime import date
 import zipfile
 from os.path import exists, expanduser, getmtime, splitext
 from typing import Optional, List
@@ -36,10 +37,17 @@ class ArchiveManager:
 
     :type dossier: str or None
     """
+    BASENAME = 'profile-save-'
+    
+    
     def __init__(self):
         self.dossier = self.get_dossier_perso()
 
-
+    ############################################################################
+    def get_archive_name(self):
+        return ArchiveManager.BASENAME + str(date.today()) + '.zip'
+    
+    
     ############################################################################
     def set_dossier(self, dossier: str) -> Optional[str]:
         """ Change le répertoire de travail.
@@ -74,7 +82,7 @@ class ArchiveManager:
 
 
     ############################################################################
-    def get_most_recent_zip(self, prefix: str) -> Optional[str]:
+    def get_most_recent_zip(self) -> Optional[str]:
         """ Récupère le fichier .zip de sauvegarde le plus récent
             
             Renvoie le nom du fichier
@@ -82,7 +90,7 @@ class ArchiveManager:
         max_mtime = 0
         file = None
         for filename in os.listdir(self.dossier):
-            if not filename.startswith(prefix) or splitext(filename)[1] != '.zip':
+            if not filename.startswith(ArchiveManager.BASENAME) or splitext(filename)[1] != '.zip':
                 continue
             mtime = getmtime(os.path.join(self.dossier, filename))
             if mtime > max_mtime:
@@ -91,14 +99,14 @@ class ArchiveManager:
         return file
 
     ############################################################################
-    def get_all_zip(self, prefix: str) -> List[str]:
+    def get_all_zip(self) -> List[str]:
         """ Récupère les fichiers .zip de sauvegarde
             
             Renvoie la liste des noms de fichier
         """
         lst_file = []
         for filename in os.listdir(self.dossier):
-            if not filename.startswith(prefix) or splitext(filename)[1] != '.zip':
+            if not filename.startswith(ArchiveManager.BASENAME) or splitext(filename)[1] != '.zip':
                 continue
             mtime = getmtime(os.path.join(self.dossier, filename))
             lst_file.append((mtime, filename))
@@ -107,7 +115,7 @@ class ArchiveManager:
     
     
     ############################################################################
-    def get_profil_config(self, prefix: str, fichier_config: str = "") -> ProfilConfig:
+    def get_profil_config(self, fichier_config: str = "") -> ProfilConfig:
         """ Ouvre un fichier de configuration
             et renvoie son ProfilConfig à partir du xml intégré
             
@@ -115,7 +123,7 @@ class ArchiveManager:
         """
 #         print("get_profil_config", fichier_config)
         if fichier_config == "" or not isfile(os.path.join(self.dossier, fichier_config)):
-            fichier_config = self.get_most_recent_zip(prefix)
+            fichier_config = self.get_most_recent_zip()
         fichier_config = os.path.join(self.dossier, fichier_config)
         
         temp = TemporaryDirectory()

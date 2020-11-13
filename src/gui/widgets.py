@@ -214,7 +214,7 @@ class WorkplaceWidget(Frame):
         self.browse_btn.grid(row=1, column=1, sticky="ne")
         
         
-        self.lst_prof = ttk.Combobox(self, values=self.manager.get_all_zip(SaveProcess.BASENAME))
+        self.lst_prof = ttk.Combobox(self, values=self.manager.get_all_zip())
         self.lst_prof.grid(row=2, column=0, columnspan = 2,
                            padx = 5, pady = 5,
                            sticky="nswe")
@@ -256,7 +256,7 @@ class WorkplaceWidget(Frame):
             puis du widget de configuration de restauration
         """
         print("update workplace")
-        self.lst_prof['values'] = self.manager.get_all_zip(SaveProcess.BASENAME)
+        self.lst_prof['values'] = self.manager.get_all_zip()
         self.lst_prof.current(0)
         self.update_profileR()
 
