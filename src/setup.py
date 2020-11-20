@@ -72,6 +72,7 @@ if __name__ == '__main__':
                             targetName="stp.exe",
                             base = "Win32GUI",
                             initScript = None,
+                            icon="img/Icone_STP.ico"
                             )
     
     
