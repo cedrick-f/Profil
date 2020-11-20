@@ -1,3 +1,5 @@
+Scripts/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -132,3 +134,4 @@ dmypy.json
 # IDEs
 .idea/
 VCRUNTIME140.dll
+pyvenv.cfg
