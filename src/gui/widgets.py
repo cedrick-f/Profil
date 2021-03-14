@@ -160,6 +160,7 @@ class ConfigWidget(Frame):
 
 
     def setProfilConfig(self, profilConfig:ProfilConfig):
+        print("setProfilConfig", profilConfig)
         self.profilConfig = profilConfig
         
         
@@ -258,7 +259,7 @@ class WorkplaceWidget(Frame):
         """ Mise à jour de liste déroulante
             puis du widget de configuration de restauration
         """
-        print("update workplace")
+#         print("update workplace")
         self.lst_prof['values'] = self.manager.get_all_zip()
         try:
             self.lst_prof.current(0)

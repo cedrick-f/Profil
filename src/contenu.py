@@ -164,7 +164,7 @@ class ProfilGroup(XMLMixin):
         fail: List[str] = []
 #         print("Sauver Groupe:", self.nom)
         for g in self.lst_elem:
-            print("  ", g.name)
+#             print("  ", g.name)
             if g.name == "":
                 fail.extend(g.sauver(dest))
 

@@ -52,19 +52,22 @@ class SaveProcess(Thread):
 class RestoreProcess(SaveProcess):
     """Définit un processus de restoration."""
 
-    def __init__(self, manager: ArchiveManager, profil_config: ProfilConfig):
+    def __init__(self, manager: ArchiveManager, 
+                 profil_config: ProfilConfig, 
+                 fichier_config: str):
         super().__init__(manager, profil_config)
         self.profil_config = profil_config
+        self.fichier_config = fichier_config
 #         print(self.profil_config)
         self.manager = manager
 
     def run(self):
         temp = TemporaryDirectory()
         zip_path = self.manager.get_most_recent_zip()
-#         print("Restauration de :", self.profil_config)
+        print("Restauration de :", self.profil_config)
         try:
             self.queue.put(msg.get('unzipping'))
-            self.manager.from_zip(zip_path, temp.name)
+            self.manager.from_zip(self.fichier_config, temp.name)
 
 #             self.queue.put(msg.get('parse'))
 #             self.profil_config.restaurer_xml(join(temp.name, CONFIG_FILE))

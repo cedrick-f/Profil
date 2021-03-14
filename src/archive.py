@@ -138,7 +138,7 @@ class ArchiveManager:
                 with zipfile.ZipFile(fichier_config, 'r') as myzip:
                     myzip.extract(save_process.CONFIG_FILE, temp.name)
             except zipfile.BadZipfile: # Deuxième tentative ...
-                print("2ème essai lecture zip :", fichier_config)
+#                 print("2ème essai lecture zip :", fichier_config)
                 with zipfile.ZipFile(fichier_config, 'r') as myzip:
                     myzip.extract(save_process.CONFIG_FILE, temp.name)
             
@@ -147,7 +147,7 @@ class ArchiveManager:
         try:
             p.restaurer_xml(fichier_xml)
         except:
-            print("ERROR")
+#             print("ERROR")
             return
         #print("   ", p)
         return p
