@@ -24,6 +24,9 @@ class Application(Frame):
     def __init__(self, master: Tk):
         super().__init__(master)
         
+        
+        
+        
         self.manager = ArchiveManager()
         self.profilConfigSave = PROFILS.copie()  # Par défaut : tous les éléments
         self.profilConfigRest = self.manager.get_profil_config()
@@ -75,6 +78,7 @@ class Application(Frame):
         self.configS.set_config()
         self.process = SaveProcess(self.manager, self.profilConfigSave)
         self.process.start()
+        self.process.join()
         self.update_status()
         self.workplace.update()
 
@@ -83,6 +87,7 @@ class Application(Frame):
             self.profilConfigRest.set_config(self.configR.get_config())
             self.process = RestoreProcess(self.manager, self.profilConfigRest)
             self.process.start()
+            self.process.join()
             self.update_status()
 
 
@@ -98,6 +103,7 @@ class Application(Frame):
 
 
     def update_profileR(self, fichier_config: str):
+        print("update_profileR_2", fichier_config)
         self.profilConfigRest = self.manager.get_profil_config(fichier_config = fichier_config)
         if self.profilConfigRest is not None:
             self.configR.setProfilConfig(self.profilConfigRest)
@@ -112,4 +118,5 @@ if __name__ == '__main__':
     center_on_screen(root)
     app = Application(root)
     root.geometry("")
+    root.iconbitmap('img/Icone_STP.ico')
     app.mainloop()
