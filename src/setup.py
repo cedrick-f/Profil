@@ -31,7 +31,8 @@ shutil.rmtree("build", ignore_errors=True)
 #################################################################################################
 
 includefiles = ['gui/']
-includefiles.extend(["../VCRUNTIME140.dll"])
+includefiles.extend(["../VCRUNTIME140.dll",
+                     ("img/Icone_STP_v2.ico", "img/Icone_STP_v2.ico")])
     
 
 # Dependencies are automatically detected, but it might need fine tuning.
@@ -72,7 +73,7 @@ if __name__ == '__main__':
                             targetName="stp.exe",
                             base = "Win32GUI",
                             initScript = None,
-                            icon="img/Icone_STP.ico"
+                            icon="img/Icone_STP_v2.ico"
                             )
     
     

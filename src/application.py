@@ -128,5 +128,5 @@ if __name__ == '__main__':
     center_on_screen(root)
     app = Application(root)
     root.geometry("")
-    root.iconbitmap('img/Icone_STP.ico')
+    root.iconbitmap('img/Icone_STP_v2.ico')
     app.mainloop()
