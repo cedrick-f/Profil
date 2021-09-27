@@ -16,6 +16,10 @@ from gui.center_tk_window import *
 from tkinter import Frame, Tk
 from archive import ArchiveManager
 from contenu import PROFILS
+import os
+from tkinter import messagebox
+
+
 
 class Application(Frame):
     """ Fenêtre principale de l'application
@@ -23,9 +27,6 @@ class Application(Frame):
 
     def __init__(self, master: Tk):
         super().__init__(master)
-        
-        
-        
         
         self.manager = ArchiveManager()
         self.profilConfigSave = PROFILS.copie()  # Par défaut : tous les éléments
@@ -120,7 +121,14 @@ class Application(Frame):
         self.configR.update()
     
 
-
+    def on_closing(self):
+        if self.process is not None:
+            if messagebox.askokcancel("Opération en cours", "Une opération est en cours....\nSouhaitez-vous réellement quitter l'application ?"):
+                root.destroy()
+            return
+        root.destroy()
+        
+        
 
 if __name__ == '__main__':
     root = Tk()
@@ -128,5 +136,6 @@ if __name__ == '__main__':
     center_on_screen(root)
     app = Application(root)
     root.geometry("")
-    root.iconbitmap('img/Icone_STP_v2.ico')
+    root.iconbitmap(os.path.join('img','Icone_STP_v2.ico'))
+    root.protocol("WM_DELETE_WINDOW", app.on_closing)
     app.mainloop()
