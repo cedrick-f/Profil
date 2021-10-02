@@ -323,7 +323,8 @@ __GD = ProfilGroup("GitHub Desktop")
 __GD.add_elem("Roaming", os.path.join(os.getenv('APPDATA'), 'GitHub Desktop'), 1)
 __GD.add_elem("Local", os.path.join(os.environ['LOCALAPPDATA'], 'GitHub Desktop'), 1)
 
-
+__PYZ = ProfilGroup("Pyzo")
+__PYZ.add_elem("Roaming", os.path.join(os.getenv('APPDATA'), 'pyzo'), 1)
 
 # Un dossier pour faire des tests en toute sécurité
 __TEST = ProfilGroup("Test")
@@ -334,6 +335,7 @@ PROFILS = ProfilConfig()
 PROFILS.add_grp(__FF)
 PROFILS.add_grp(__BUR)
 PROFILS.add_grp(__GD)
+PROFILS.add_grp(__PYZ)
 #PROFILS.add_grp(__TEST)
 # PROFILS = {"FireFox" : __FF,
 #             "Bureau" : __BUR,

@@ -58,7 +58,7 @@ build_exe_options = {'build_exe': 'build/bin',
 
 
 name = "SauveTonProfil"
-version = "1.2"
+version = "1.3"
 author = "NSI 2020"
 author_email = "cedrick.faury#ac-clermont.fr".replace("#", '@')
 description = "SauveTonProfil"
