@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import setup
 
 msg = {
     'archive': 'Compression des dossiers',
-    'title': 'Sauve Ton Profil',
+    'title': f'Sauve Ton Profil - {setup.version}',
     'save': 'Sauvegarder',
     'saving': 'Sauvegarde',
     'restore': 'Restaurer',

@@ -16,7 +16,7 @@ from gui.center_tk_window import *
 from tkinter import Frame, Tk
 from archive import ArchiveManager
 from contenu import PROFILS
-import os
+import os, sys
 from tkinter import messagebox
 
 
@@ -25,7 +25,7 @@ class Application(Frame):
     """ Fenêtre principale de l'application
     """
 
-    def __init__(self, master: Tk):
+    def __init__(self, master: Tk, auto_restore = False):
         super().__init__(master)
         
         self.manager = ArchiveManager()
@@ -66,17 +66,19 @@ class Application(Frame):
         self.process = None
         self.pack(fill=tkinter.X, expand=1)
         
-
-        
-        # Affichage d'un splash screen d'avertissement
-        master.withdraw()
-        splash = Splash(self)
-        
-        self.after(2000, splash.destroy)
-        master.deiconify()
-        splash.lift()
-        center_on_screen(splash)
-        #self.after(100, self.pack)
+        if auto_restore:
+            self.handle_restore()
+            master.destroy()
+        else:
+            # Affichage d'un splash screen d'avertissement
+            master.withdraw()
+            splash = Splash(self)
+            
+            self.after(2000, splash.destroy)
+            master.deiconify()
+            splash.lift()
+            center_on_screen(splash)
+            #self.after(100, self.pack)
     
     
     def handle_save(self):
@@ -128,13 +130,23 @@ class Application(Frame):
             return
         root.destroy()
         
-        
+    def testRetore(self):
+        print("restore")
+
+
+
 
 if __name__ == '__main__':
     root = Tk()
-    root.title(msg.get('title'))
-    center_on_screen(root)
     app = Application(root)
+    if len(sys.argv) > 1 and sys.argv[1] == '-r': # Lancement automatique d'une restauration
+        app.handle_restore()
+        #app.testRetore()
+        root.destroy()
+        sys.exit()
+    
+    center_on_screen(root)
+    root.title(msg.get('title'))
     root.geometry("")
     root.iconbitmap(os.path.join('img','Icone_STP_v2.ico'))
     root.protocol("WM_DELETE_WINDOW", app.on_closing)
