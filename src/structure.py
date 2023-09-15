@@ -113,7 +113,7 @@ class XMLMixin:
 
         def lect(branche: ET.Element, nom: str = "", num: int = -1):
             if nom[:2] == "S_":
-                return unescape(branche.get(nom))
+                return unescape(branche.get(nom, ""))
 
             elif nom[:2] == "I_":
                 return int(branche.get(nom))

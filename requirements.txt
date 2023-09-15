@@ -1,0 +1,4 @@
+pywin32
+pyminizip
+tkhtmlview
+cx_freeze

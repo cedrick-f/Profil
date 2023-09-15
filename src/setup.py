@@ -18,7 +18,7 @@ Script pour générer un pack avec executable :
     .../python setup.py build
 """
     
-PATH_PYTHON36 = "C:/Users/Cedrick/AppData/Local/Programs/Python/Python37-32"
+#PATH_PYTHON36 = "C:/Users/Cedrick/AppData/Local/Programs/Python/Python37-32"
 
 import sys, os
     
@@ -26,23 +26,23 @@ import sys, os
 import shutil
 shutil.rmtree("build", ignore_errors=True)
 
+base_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 # Inculsion des fichiers de données
 #################################################################################################
 
-includefiles = ['gui/']
-includefiles.extend(["../VCRUNTIME140.dll",
-                     ("img/Icone_STP_v2.ico", "img/Icone_STP_v2.ico")])
+includefiles = [os.path.join(base_path,'gui')]
+includefiles.extend([(os.path.join(base_path, 'img','Icone_STP_v2.ico'), os.path.join('img','Icone_STP_v2.ico'))])
     
 
 # Dependencies are automatically detected, but it might need fine tuning.
 build_exe_options = {'build_exe': 'build/bin',
                      'include_msvcr': True,
                      'add_to_path': True,
-                     "packages": ['tkinter'],
+                     "packages": ['tkinter', 'tkhtmlview'],
                      "optimize" : 1,
-                     "namespace_packages" : [],
-                     "excludes": ['pydoc', 'doctest',
+                     #"namespace_packages" : [],
+                     "excludes": ['pydoc', 'doctest', 'lief', 'test', 'cx_freeze', 
                                   "PyQt4", "PyQt4.QtGui","PyQt4._qt",
                                   "matplotlib",
                                   "numpy",
@@ -58,7 +58,7 @@ build_exe_options = {'build_exe': 'build/bin',
 
 
 name = "SauveTonProfil"
-version = "1.4"
+version = "1.9"
 author = "NSI 2020"
 author_email = "cedrick.faury#ac-clermont.fr".replace("#", '@')
 description = "SauveTonProfil"
@@ -69,11 +69,11 @@ lic = "GPL"
 if __name__ == '__main__':
     if sys.platform == "win32":
         from cx_Freeze import setup, Executable
-        cible = Executable( script = "application.py",
-                            targetName="stp.exe",
+        cible = Executable( script = os.path.join(base_path,"application.py"),
+                            target_name="stp.exe",
                             base = "Win32GUI",
-                            initScript = None,
-                            icon="img/Icone_STP_v2.ico"
+                            init_script = None,
+                            icon = os.path.join(base_path, 'img','Icone_STP_v2.ico')
                             )
     
     
@@ -86,7 +86,7 @@ if __name__ == '__main__':
                 long_description = long_description,
                 license = lic,
                 options = {"build_exe": build_exe_options,
-                           "build": {'build_exe': 'build'},
+                           #"build": {'build_exe': 'build'},
                            "install" : {'install_exe': 'build'},
                            },
         #        include-msvcr = True,
@@ -106,6 +106,6 @@ def supprimer(racine, nomFichier, parent = "", niveau = 0):
     elif os.path.split(abspath)[1] == nomFichier:
         os.remove(abspath)
         print(abspath)
-supprimer('build/bin/lib', 'python37.dll')
+supprimer('build/bin/lib', 'python38.dll')
 supprimer('build/bin/lib', 'VCRUNTIME140.dll')
             

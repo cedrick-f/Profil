@@ -8,13 +8,19 @@
 #
 #
 ################################################################################
-from contenu import ProfilGroup, PROFILS, ProfilElem, ProfilConfig
-from messages import msg
-from archive import ArchiveManager
 from tkinter import Button, Checkbutton, Entry, Frame, StringVar, BooleanVar, \
                     Label, Toplevel, ttk
 from tkinter.filedialog import askdirectory
+from tkhtmlview import HTMLLabel
 from typing import Dict, Callable, List
+from gui.center_tk_window import *
+
+
+###############################################################################
+# Modules "application"
+from contenu import ProfilGroup, PROFILS, ProfilElem, ProfilConfig
+from messages import msg
+from archive import ArchiveManager
 from save_process import SaveProcess
 
 
@@ -26,23 +32,32 @@ class ActionWidget(Frame):
         self.save_fn = save_fn
         self.restore_fn = restore_fn
         
+        l = Label(self, text = msg.get('password'), justify = 'left')
+        l.grid(row=0, column=0, columnspan = 2, sticky="nw")
+        self.psw = StringVar()
+        self.pswd_widget = Entry(self, show="*", width = 15, textvariable = self.psw)
+        self.pswd_widget.grid(row=1, column=0, columnspan = 2, 
+                              sticky = "nsew")
+        
         self.save_btn = Button(self, text=msg.get('save'), 
                                command=self.handle_save_click)
-        self.save_btn.grid(row=0, column=0, 
+        self.save_btn.grid(row=2, column=0, 
                            ipadx = 5, ipady = 5, 
                            padx = 5, pady = 5,
                            sticky = "nsew")
         
         self.restore_btn = Button(self, text=msg.get('restore'), 
                                   command=self.handle_restore_click)
-        self.restore_btn.grid(row=0, column=1, 
+        self.restore_btn.grid(row=2, column=1, 
                               ipadx = 5, ipady = 5, 
                               padx = 5, pady = 5,
                               sticky = "nsew")
         
+        
+        
         self.status = Label(self, text = '...')
         self.lst_elem: List[ProfilElem] = []
-        self.status.grid(row=1, column=0, columnspan = 2, 
+        self.status.grid(row=3, column=0, columnspan = 2, 
                          sticky = "nsew")
         
         self.columnconfigure(0, weight=1)
@@ -54,11 +69,13 @@ class ActionWidget(Frame):
         self.status['text'] = text
 
     def handle_save_click(self):
-        self.save_fn()
+        self.save_fn(self.get_psw())
 
     def handle_restore_click(self):
-        self.restore_fn()
+        self.restore_fn(self.get_psw())
 
+    def get_psw(self):
+        return self.psw.get()
 
 
 
@@ -160,7 +177,7 @@ class ConfigWidget(Frame):
 
 
     def setProfilConfig(self, profilConfig:ProfilConfig):
-        print("setProfilConfig", profilConfig)
+        #print("setProfilConfig", profilConfig)
         self.profilConfig = profilConfig
         
         
@@ -222,7 +239,7 @@ class WorkplaceWidget(Frame):
         try:
             self.lst_prof.current(0)
         except:
-            pass
+            print("ERR1")
         self.lst_prof.bind("<<ComboboxSelected>>", lambda x: self.update_profileR())
         
         self.columnconfigure(0, weight=1)
@@ -264,7 +281,7 @@ class WorkplaceWidget(Frame):
         try:
             self.lst_prof.current(0)
         except:
-            pass
+            print("ERR2")
         self.update_profileR()
 
 
@@ -272,10 +289,13 @@ class WorkplaceWidget(Frame):
 
 #################################################################################################
 class Splash(Toplevel):
-    def __init__(self, parent):
+    def __init__(self, parent, mess = 'avertissement', **kargs):
         Toplevel.__init__(self, parent)
-        T = Label(self, text = msg.get('avertissement'))
+        
+        T = HTMLLabel(self, html = msg.get(mess))
         T.grid()
+        T.fit_height()
+        center_on_screen(self)
         self.overrideredirect(1)
         self.update()
 

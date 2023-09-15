@@ -16,14 +16,29 @@ from datetime import date
 import zipfile
 from os.path import exists, expanduser, getmtime, splitext
 from typing import Optional, List
-from contenu import ProfilConfig
 from tempfile import TemporaryDirectory
-import save_process
-
+from pathlib import Path
+import logging, traceback
+import subprocess
 # bibliothèque à installer : pip install pywin32
 from win32com.shell import shell, shellcon
 from genericpath import isfile
 from zipfile import BadZipfile
+import pyminizip
+
+###############################################################################
+# Modules "application"
+from contenu import ProfilConfig, DEBUG
+import save_process
+
+
+# import distutils.spawn
+# HAS_7Z = bool(distutils.spawn.find_executable("7z.exe"))
+# from shutil import which
+# 
+# HAS_7Z = which("7z.exe") is not None
+
+
 
 def get_path_mesdocuments():
     try:
@@ -115,7 +130,7 @@ class ArchiveManager:
     
     
     ############################################################################
-    def get_profil_config(self, fichier_config: str = "") -> ProfilConfig:
+    def get_profil_config(self, fichier_config: str = "", psw: str = "") -> ProfilConfig:
         """ Ouvre un fichier de configuration
             et renvoie son ProfilConfig à partir du xml intégré
             
@@ -138,7 +153,7 @@ class ArchiveManager:
                 with zipfile.ZipFile(fichier_config, 'r') as myzip:
                     myzip.extract(save_process.CONFIG_FILE, temp.name)
             except zipfile.BadZipfile: # Deuxième tentative ...
-#                 print("2ème essai lecture zip :", fichier_config)
+                if DEBUG: print("2ème essai lecture zip :", fichier_config)
                 with zipfile.ZipFile(fichier_config, 'r') as myzip:
                     myzip.extract(save_process.CONFIG_FILE, temp.name)
             
@@ -146,28 +161,48 @@ class ArchiveManager:
 #         print(fichier_xml)
         try:
             p.restaurer_xml(fichier_xml)
-        except:
-#             print("ERROR")
+        except Exception as e:
+            logging.error("ERROR reading config : "+ fichier_xml + "\n" + traceback.format_exc())
+            if DEBUG: print("ERROR reading config : "+ fichier_xml)
             return
         #print("   ", p)
         return p
     
     
     ############################################################################
-    def to_zip(self, src_path: str, dest_zip: str) -> bool:
+    def to_zip(self, src_path: str, dest_zip: str, pwd = None) -> bool:
         """Archive un dossier dans un fichier .zip de destination.
 
         :param src_path: Chemin complet vers le répertoire à archiver
         :param dest_zip: Nom du fichier de destination
         """
-        with zipfile.ZipFile(os.path.join(self.dossier, dest_zip), 'w') as myzip:
-            for f in glob.iglob(os.path.join(src_path, "**"), recursive=True):
+        zipPath = os.path.join(self.dossier, dest_zip)
+        if DEBUG: print("to_zip", pwd)
+        if False:#pwd is not None:
+            lst = Path(src_path).glob('**/*.*')
+            lst = [os.path.relpath(f, start=src_path) for f in lst]
+            pyminizip.compress_multiple(lst, 
+                                        [],
+                                        zipPath, pwd, 5)
+            
+            return
+        if DEBUG: print("     ", zipPath)
+        with zipfile.ZipFile(zipPath, 'w') as myzip:
+            p = Path(src_path)
+#             for ff in p.glob('**/*.*'):
+#                 print("???3", ff)
+#             for ff in glob.iglob(os.path.join(src_path, "**"), recursive=True):
+#                 print("???4", ff)
+            
+            for f in p.glob('**/*.*'):   
+                if DEBUG: print(f) 
+            #for f in glob.iglob(os.path.join(src_path, "**"), recursive=True):
                 myzip.write(f, os.path.relpath(f, start=src_path))
         return True
 
 
     ############################################################################
-    def from_zip(self, src_zip: str, dest_path: str) -> bool:
+    def from_zip(self, src_zip: str, dest_path: str, psw = None) -> bool:
         """Décompresse une archive .zip vers un dossier.
 
         :param src_zip: Nom du fichier d'origine

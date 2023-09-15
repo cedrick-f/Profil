@@ -8,17 +8,26 @@
 #
 #
 ################################################################################
+import os, sys, time
+from tkinter import Frame, Tk, messagebox
 
+
+###############################################################################
+# Modules "application"
 from save_process import RestoreProcess, SaveProcess
 from messages import msg
+from archive import ArchiveManager, get_path_mesdocuments
+from contenu import PROFILS
 from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget, Splash
 from gui.center_tk_window import *
-from tkinter import Frame, Tk
-from archive import ArchiveManager
-from contenu import PROFILS
-import os, sys
-from tkinter import messagebox
 
+
+import logging
+logging.basicConfig(filename = os.path.join(get_path_mesdocuments(), 'stp.log'), 
+                    level=logging.DEBUG)
+
+
+base_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 
 class Application(Frame):
@@ -32,6 +41,28 @@ class Application(Frame):
         self.profilConfigSave = PROFILS.copie()  # Par défaut : tous les éléments
         self.profilConfigRest = self.manager.get_profil_config()
         self.fichier_config = self.manager.get_most_recent_zip()
+        
+        if auto_restore:
+            # Affichage d'un splash screen d'attente
+            master.withdraw()
+            splash = Splash(self, "auto_restore", path="")
+            #center_on_screen(splash)
+            splash.lift()
+
+            self.handle_restore()
+            time.sleep(10)
+            splash.destroy()
+            master.destroy()
+            sys.exit()
+            
+            
+        # Affichage d'un splash screen d'avertissement
+        master.withdraw()
+        splash = Splash(self)
+        ##center_on_screen(splash)
+        self.after(2000, splash.destroy)
+        master.deiconify()
+        splash.lift()
         
         
         #################################################################################
@@ -66,40 +97,36 @@ class Application(Frame):
         self.process = None
         self.pack(fill=tkinter.X, expand=1)
         
-        if auto_restore:
-            self.handle_restore()
-            master.destroy()
-        else:
-            # Affichage d'un splash screen d'avertissement
-            master.withdraw()
-            splash = Splash(self)
-            
-            self.after(2000, splash.destroy)
-            master.deiconify()
-            splash.lift()
-            center_on_screen(splash)
-            #self.after(100, self.pack)
     
     
-    def handle_save(self):
+    def handle_save(self, psw = ""):
 #         self.profilConfigSave.set_grps(self.configS.get_config())
         self.configS.set_config()
-        self.process = SaveProcess(self.manager, self.profilConfigSave)
+        self.process = SaveProcess(self.manager, 
+                                   self.profilConfigSave, 
+                                   psw)
+        logging.info('Saving ...')
         self.process.start()
         self.process.join()
         self.update_status()
         self.workplace.update()
 
-    def handle_restore(self):
+    def handle_restore(self, psw = ""):
+        #self.testRetore()
+        #return
         if self.profilConfigRest is not None:
 #             print("Restore :", self.profilConfigRest)
-            self.profilConfigRest.set_config(self.configR.get_config())
+            if hasattr(self, 'configR'):
+                self.profilConfigRest.set_config(self.configR.get_config())
             self.process = RestoreProcess(self.manager, 
                                           self.profilConfigRest,
-                                          self.fichier_config)
+                                          self.fichier_config, 
+                                          psw)
+            
             self.process.start()
             self.process.join()
-            self.update_status()
+            if hasattr(self, 'configR'):
+                self.update_status()
 
 
     def update_status(self):
@@ -132,22 +159,26 @@ class Application(Frame):
         
     def testRetore(self):
         print("restore")
+        import time
+        time.sleep(3)
+        print("fini !")
 
 
 
 
 if __name__ == '__main__':
-    root = Tk()
-    app = Application(root)
-    if len(sys.argv) > 1 and sys.argv[1] == '-r': # Lancement automatique d'une restauration
-        app.handle_restore()
-        #app.testRetore()
-        root.destroy()
-        sys.exit()
     
+
+
+    root = Tk()
+    auto_restore = len(sys.argv) > 1 and sys.argv[1] == '-r'
+    app = Application(root, auto_restore = auto_restore)
     center_on_screen(root)
-    root.title(msg.get('title'))
-    root.geometry("")
-    root.iconbitmap(os.path.join('img','Icone_STP_v2.ico'))
-    root.protocol("WM_DELETE_WINDOW", app.on_closing)
+    if not auto_restore:
+        root.title(msg.get('title'))
+        root.geometry("")
+        root.iconbitmap(os.path.join(base_path, 'img','Icone_STP_v2.ico'))
+        root.protocol("WM_DELETE_WINDOW", app.on_closing)
+    else:
+        logging.info('AutoRestore')
     app.mainloop()

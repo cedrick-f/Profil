@@ -8,22 +8,28 @@
 #
 #
 ################################################################################
-
 import glob
 import shutil
 import time
 from typing import Dict
 # Modules "python"
 from os import path
+from pathlib import Path
+import logging, traceback
+import configparser
 
+###############################################################################
 # Modules "application"
 from structure import *
+
+
+DEBUG = False
 
 
 ################################################################################
 class ProfilConfig(XMLMixin):
     def __init__(self, nom: str = "monProfil"):
-        super(ProfilConfig, self).__init__()
+        super().__init__()
         self.nom = nom
         self.groups: List[ProfilGroup] = []#list(PROFILS.values())
 
@@ -94,7 +100,7 @@ class ProfilConfig(XMLMixin):
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
         fail: List[str] = []
-#         print("Sauver Config:", self.nom)
+        if DEBUG: print("Sauver Config:", self.nom)
         for g in self.groups:
             subfolder = os.path.join(dest, g.nom)
             os.makedirs(subfolder)
@@ -109,6 +115,7 @@ class ProfilConfig(XMLMixin):
         """
         fail: List[str] = []
         for group in self.groups:
+#             print("       ", group.nom)
             fail.extend(group.restaurer(path.join(source, group.nom)))
         return fail
 
@@ -120,7 +127,7 @@ class ProfilGroup(XMLMixin):
     """Un groupe de fichier 'profil' à sauvegarder."""
 
     def __init__(self, nom: str = ""):
-        super(ProfilGroup, self).__init__()
+        super().__init__()
         self.nom = nom
         self.lst_elem: List[ProfilElem] = []
 
@@ -155,14 +162,15 @@ class ProfilGroup(XMLMixin):
     
     
     ############################################################################
-    def add_elem(self, name: Optional[str] = "", path: Optional[str] = None, mode: int = 0):
-        self.lst_elem.append(ProfilElem(name, path, mode))
+    def add_elem(self, name: Optional[str] = "", envpath: Optional[str] = "", path: Optional[str] = None, mode: int = 0):
+        if DEBUG: print("add_elem", name)
+        self.lst_elem.append(ProfilElem(name, envpath, path, mode))
 
 
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
         fail: List[str] = []
-#         print("Sauver Groupe:", self.nom)
+        if DEBUG: print(" Sauver Groupe:", self.nom)
         for g in self.lst_elem:
 #             print("  ", g.name)
             if g.name == "":
@@ -170,7 +178,8 @@ class ProfilGroup(XMLMixin):
 
             else:
                 subfolder = os.path.join(dest, g.name)
-                os.makedirs(subfolder)
+                if not os.path.exists(subfolder):
+                    os.makedirs(subfolder)
                 fail.extend(g.sauver(subfolder))
 
         return fail
@@ -200,10 +209,17 @@ class ProfilElem(XMLMixin):
     """Un élément d'un profil à sauvegarder (fichier ou dossier)."""
 
     def __init__(self, name: Optional[str] = "", 
+                 envpath: Optional[str] = "",
                  path: Optional[str] = "", 
                  mode: int = 0):
-        super(ProfilElem, self).__init__()
-
+        super().__init__()
+        if DEBUG: print("ProfilElem", name, "\n", envpath, "\n", path, "\n", mode)
+        
+        if envpath is not None and len(envpath) > 0 and os.getenv(envpath) is not None:
+            self.env = envpath
+        else:
+            self.env = ""
+        
         self.path = path
         self.name = name
 
@@ -219,12 +235,21 @@ class ProfilElem(XMLMixin):
 
     ############################################################################
     def __repr__(self) -> str:
-        return "ProfilElem - "+self.name+" : "+ self.path + " (mode " + str(self.mode)+")"
-
+        return "ProfilElem - "+self.name+" : "+ self.env + " "+ self.path + " (mode " + str(self.mode)+")"
 
     ############################################################################
+    def getFullPath(self):
+        if DEBUG: print("getFullPath", self.env)
+        logging.info("getFullPath :"+ self.env + " --- "+self.path)
+        if len(self.env) > 0:
+            return os.path.join(os.getenv(self.env), self.path)
+        return self.path
+            
+            
+    ############################################################################
     def copie(self):
-        pe = ProfilElem(self.name, self.path, self.mode)
+        if DEBUG: print("copie", self.name)
+        pe = ProfilElem(self.name, self.env, self.path, self.mode)
         return pe
     
     ############################################################################
@@ -236,36 +261,74 @@ class ProfilElem(XMLMixin):
         :raises:
             FileExistsError: si dest existe déjà
         """
-#         print("sauver Elem", self.path)
+        
         fail: List[str] = []
         
+        path = self.getFullPath()
+        if DEBUG: print("  Sauver Elem", self.path, "("+path+")")
         
         if self.mode == 0:
-            shutil.copy2(self.path, dest)
+            shutil.copy2(path, dest)
 
         elif self.mode == 1:
             try:
-                if not os.access(self.path, os.W_OK):
-                    fail.append(self.path)
+                if not os.access(path, os.W_OK):
+                    fail.append(path)
+                    logging.error("  Save ERROR (access): "+ path)
+                    if DEBUG: print("  Save ERROR (access):"+ path)
                     return fail
                 shutil.rmtree(dest)
-                shutil.copytree(self.path, dest)    # py3.8 : , dirs_exist_ok = True)
+                shutil.copytree(path, dest)    # py3.8 : , dirs_exist_ok = True)
+                logging.info('  Saved 1 :'+ path)
+                if DEBUG: print('  Saved 1 :'+ path)
             except shutil.Error as exc:
                 errors = exc.args[0]
                 for error in errors:
                     src, dst, msg = error
                     fail.append(src)
-
+                    logging.error("  Save ERROR :"+ src+" "+ msg)
+                    if DEBUG: print("  Save ERROR :"+ src, msg)
 
         elif self.mode == 2:
-            for f in glob.glob(self.path):
-#                 print("   ", f)
-                shutil.copy2(f, dest)
+            for f in glob.glob(path):
+#                 print("+++", f, self.path)
+                # Astuce pour copier les fichier "cachés"
+                if os.path.basename(f).startswith('.'):
+                    #cwd = os.getcwd()
+#                     print("!!!!", os.path.basename(f))
+                    e = shutil.copyfile(f, os.path.join(dest, "_"+os.path.basename(f)))
+                    if DEBUG: print("  Err:",e)
+#                     p = Path(dest)
+#                     for ff in p.glob('**/*.*'):
+#                         print("???1", ff)
+#                     os.chdir(dest)
+                    
+                    os.rename(os.path.join(dest,"_"+os.path.basename(f)), 
+                              os.path.join(dest, os.path.basename(f)))
+#                     os.chdir(cwd)
+#                     for ff in p.glob('**/*.*'):
+#                         print("???2", ff)
+#                 pp, ff = os.path.split(f)
+#                 fff, eee = os.path.splitext(ff)
+#                 print(pp, " - ", fff, " - ", eee)
+#                 if eee == '':
+#                     print("   xxx-", fff)
+#                     os.rename(f, os.path.join(pp, "_"+fff))
+#                     shutil.copy2(os.path.join(pp, "_"+fff), dest)
+#                     os.rename(os.path.join(dest, "_"+fff), os.path.join(dest, fff))
+                else:
+                    shutil.copy2(f, dest)
+                
+                logging.info('  Saved 2 :'+ f)
+                if DEBUG: print('  Saved 2 :'+ f)
+            
                 
         elif self.mode == 3:
-            for f in glob.glob(self.path, recursive = True):
+            for f in glob.glob(path, recursive = True):
                 shutil.copy2(f, dest)
-
+                logging.info('  Saved 3 :'+ f)
+                if DEBUG: print('  Saved 3 :'+ f)
+                
         return fail
 
     ############################################################################
@@ -276,33 +339,42 @@ class ProfilElem(XMLMixin):
         fail: List[str] = []
 #         print("restaurer", source, self.path)
         
+        path = self.getFullPath()
+        logging.info("Restore process : " + source + " --> "+ path)
         try:
-            if path.exists(self.path):
-                shutil.rmtree(self.path, True)
+            if os.path.exists(path):
+                shutil.rmtree(path, True)
                 time.sleep(0.1) # Pour éviter les erreurs d'accès refusé par copytree
 
+            if self.mode == 0:      # Tous les fichiers du dossier
+                shutil.copy2(source, path)
 
-            if self.mode == 0:
-                shutil.copy2(source, self.path)
+            elif self.mode == 1:    # Tous les fichiers du dossier et des sous dossiers
+                shutil.copytree(source, path)
 
-            elif self.mode == 1:
-                shutil.copytree(source, self.path)
-
-            elif self.mode == 2:
-                for f in glob.glob(os.path.join(source, "**")):
+            elif self.mode == 2:    # Tous les fichiers du dossier, filtrés
+                p = Path(source)
+                for f in p.glob('**/*.*'):
+#                     print("???3", f)
+#                 for f in glob.glob(os.path.join(source, "**")):
+#                     print(f, self.path)
+                    
 #                     print(f, glob.glob(os.path.join(source, "**")))
-                    shutil.copy2(f, self.path.split("*")[0])
+                    shutil.copy2(f, path.split("*")[0])
+                    logging.info("    File Restore SUCCESS : "+str(f))
 
-            elif self.mode == 3:
+            elif self.mode == 3:    # Tous les fichiers du dossier et des sous dossiers, filtrés
                 for f in glob.glob(source, recursive = True):
-                    shutil.copy2(f, self.path)
+                    shutil.copy2(f, path)
 
-        except shutil.Error as exc:
-            errors = exc.args[0]
-            for error in errors:
-                src, dst, msg = error
-                fail.append(src)
-
+        except Exception as exc:
+            logging.info('ERROR : '+ traceback.format_exc())
+#             errors = exc.args[0]
+#             for error in errors:
+#                 src, dst, msg = error
+#                 fail.append(src)
+#                 logging.error("Restore ERROR : "+src)
+                
         return fail
 
 
@@ -312,38 +384,101 @@ class ProfilElem(XMLMixin):
 
 ################################################################################
 # Constantes "application"
-__FF = ProfilGroup("FireFox")
-__FF.add_elem("Roaming", os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles'), 1)
-__FF.add_elem("Local", os.path.join(os.environ['LOCALAPPDATA'], 'Mozilla','Firefox','Profiles'), 1)
 
-__BUR = ProfilGroup("Bureau")
-__BUR.add_elem("", os.path.join(os.environ['USERPROFILE'], "Desktop","*.lnk"), 2)
-
-__GD = ProfilGroup("GitHub Desktop")
-__GD.add_elem("Roaming", os.path.join(os.getenv('APPDATA'), 'GitHub Desktop'), 1)
-__GD.add_elem("Local", os.path.join(os.environ['LOCALAPPDATA'], 'GitHub Desktop'), 1)
-
-__PYZ = ProfilGroup("Pyzo")
-__PYZ.add_elem("Roaming", os.path.join(os.getenv('APPDATA'), 'pyzo'), 1)
-
-# Un dossier pour faire des tests en toute sécurité
-__TEST = ProfilGroup("Test")
-__TEST.add_elem("", os.path.join(os.environ['USERPROFILE'], "Desktop", "Test"), 1)
+# Modes de copie :
+# 0: Tous les fichiers du dossier
+# 1: Tous les fichiers du dossier et des sous dossiers
+# 2: Tous les fichiers du dossier, filtrés
+# 3: Tous les fichiers du dossier et des sous dossiers, filtrés
+    
 
 
 PROFILS = ProfilConfig()
-PROFILS.add_grp(__FF)
-PROFILS.add_grp(__BUR)
-PROFILS.add_grp(__GD)
-PROFILS.add_grp(__PYZ)
-#PROFILS.add_grp(__TEST)
-# PROFILS = {"FireFox" : __FF,
-#             "Bureau" : __BUR,
-#             "Test" : __TEST}
+
+if DEBUG:
+    # Un dossier pour faire des tests en toute sécurité
+    __TEST = ProfilGroup("Test")
+    __TEST.add_elem("f", 'USERPROFILE', os.path.join(".test"), 2)
+    __TEST.add_elem("d", 'USERPROFILE', os.path.join(".dtest"), 1)
+    __TEST.add_elem("a", 'APPDATA', os.path.join("atest"), 1)
+    PROFILS.add_grp(__TEST)
+    
+else:
+    mozilla_profile = os.path.join(os.getenv('APPDATA'), 'Mozilla', 'Firefox')
+    mozilla_profile_ini = os.path.join(mozilla_profile, 'profiles.ini')
+    profile = configparser.ConfigParser()
+    profile.read(mozilla_profile_ini)
+    profile_path = profile.get('Profile0', 'Path').split('/')[-1]
+    for section in profile.sections():
+        if section.startswith("Install"):
+            profile_path = profile.get(section, "Default").split('/')[-1]
+            break
+    #print(profile_path)
+
+    __FF = ProfilGroup("FireFox")
+    __FF.add_elem("Roaming", 'APPDATA', os.path.join('Mozilla','Firefox', 'Profiles', profile_path), 1)
+    __FF.add_elem("Local", 'LOCALAPPDATA', os.path.join('Mozilla','Firefox', 'Profiles', profile_path), 1)
+    __FF.add_elem("profiles.ini", 'APPDATA', os.path.join('Mozilla','Firefox','*profiles.ini'), 2)
+    #__FF.add_elem("Local", 'LOCALAPPDATA', os.path.join('Mozilla','Firefox','Profiles'), 1)
+    #__FF.add_elem("Roaming", 'APPDATA', local_data_path, 1)
+    #__FF.add_elem("profile.ini", 'LOCALAPPDATA', os.path.join('Mozilla','Firefox', 'profiles.ini'), 2)
+    
+    __BUR = ProfilGroup("Bureau")
+    __BUR.add_elem("", 'USERPROFILE', os.path.join("Desktop","*.lnk"), 2)
+    
+    __TSK = ProfilGroup("Barre des tâches")
+    __TSK.add_elem("", 'APPDATA', os.path.join("Microsoft", "Internet Explorer", "Quick Launch", "User Pinned", "TaskBar", "*.lnk"), 2)
+    
+    __STRT = ProfilGroup("Menu Démarrer")
+    __STRT.add_elem("", 'APPDATA', os.path.join("Microsoft", "Internet Explorer", "Quick Launch", "User Pinned", "StartMenu", "*.lnk"), 3)
+    
+    __GD = ProfilGroup("GitHub Desktop")
+    __GD.add_elem("Roaming", 'APPDATA', os.path.join('GitHub Desktop'), 1)
+    __GD.add_elem("Local", 'LOCALAPPDATA', os.path.join('GitHub Desktop'), 1)
+    
+    __PYZ = ProfilGroup("Pyzo")
+    __PYZ.add_elem("Roaming", 'APPDATA', os.path.join('pyzo'), 1)
+    __PYZ.add_elem("Local", 'LOCALAPPDATA', os.path.join('pyzo'), 1)
+
+    __PYT = ProfilGroup("Python")
+    __PYT.add_elem("Local", 'LOCALAPPDATA', os.path.join('Programs', 'Python'), 1)
+    
+    __VEY = ProfilGroup("Veyon")
+    __VEY.add_elem("Roaming", 'APPDATA', os.path.join('veyon'), 1)
+    
+    # __VSC = ProfilGroup("Visual Studio Code")
+    # __VSC.add_elem("Settings", 'APPDATA', os.path.join('Code','User'), 1)
+    # __VSC.add_elem("Extensions", 'USERPROFILE', os.path.join('.vscode.','extensions'), 1) #%USERPROFILE%\.vscode\extensions
+    
+    __COD = ProfilGroup("VSCodium")
+    __COD.add_elem("Local", 'LOCALAPPDATA', os.path.join('Programs','VSCodium'), 1)
+    __COD.add_elem("Roaming", 'APPDATA', os.path.join('VSCodium'), 1)
+    __COD.add_elem("Extensions", 'USERPROFILE', os.path.join('.vscode-oss'), 1)
+    
+    __GIT = ProfilGroup("Git")
+    __GIT.add_elem("Config", 'USERPROFILE', os.path.join(".gitconfig."), 2)
+    __GIT.add_elem("Credentials", 'USERPROFILE', os.path.join(".git-credentials."), 2)
+    
+    __SSH = ProfilGroup("Clés SSH")
+    __SSH.add_elem("", 'USERPROFILE', os.path.join(".ssh."), 1)
+
+    PROFILS.add_grp(__FF)
+    PROFILS.add_grp(__BUR)
+    PROFILS.add_grp(__GD)
+    PROFILS.add_grp(__PYZ)
+    PROFILS.add_grp(__VEY)
+    PROFILS.add_grp(__TSK)
+    PROFILS.add_grp(__STRT)
+    PROFILS.add_grp(__GIT)
+    PROFILS.add_grp(__SSH)
+    PROFILS.add_grp(__PYT)
+    PROFILS.add_grp(__COD)
+
+
 
 ################################################################################
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
     # base = os.path.join(os.environ['USERPROFILE'], "Desktop\\*lnk*")
     # pp = os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
     # print(pp)
@@ -354,12 +489,12 @@ if __name__ == "__main__":
     # pp = os.path.join(os.getenv('APPDATA'), 'Mozilla','Firefox','Profiles')
     # print(pp)
     #__FF.sauver_xml(os.path.join(base, "text.xml"))
-    print(PROFILS)
+    #print(PROFILS)
     
     # essai avec pickle
-    import pickle
+    # import pickle
     
-    with open('data.pickle', 'wb') as f:
-        # Pickle the 'data' dictionary using the highest protocol available.
-        pickle.dump(PROFILS, f, pickle.HIGHEST_PROTOCOL)
+    # with open('data.pickle', 'wb') as f:
+    #     # Pickle the 'data' dictionary using the highest protocol available.
+    #     pickle.dump(PROFILS, f, pickle.HIGHEST_PROTOCOL)
     
