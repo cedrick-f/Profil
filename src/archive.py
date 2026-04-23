@@ -24,7 +24,7 @@ import subprocess
 from win32com.shell import shell, shellcon
 from genericpath import isfile
 from zipfile import BadZipfile
-import pyminizip
+#import pyminizip
 
 ###############################################################################
 # Modules "application"
@@ -157,16 +157,16 @@ class ArchiveManager:
                 with zipfile.ZipFile(fichier_config, 'r') as myzip:
                     myzip.extract(save_process.CONFIG_FILE, temp.name)
             
-        fichier_xml = os.path.join(temp.name, save_process.CONFIG_FILE)
-#         print(fichier_xml)
-        try:
-            p.restaurer_xml(fichier_xml)
-        except Exception as e:
-            logging.error("ERROR reading config : "+ fichier_xml + "\n" + traceback.format_exc())
-            if DEBUG: print("ERROR reading config : "+ fichier_xml)
-            return
-        #print("   ", p)
-        return p
+            fichier_xml = os.path.join(temp.name, save_process.CONFIG_FILE)
+    #         print(fichier_xml)
+            try:
+                p.restaurer_xml(fichier_xml)
+            except Exception as e:
+                logging.error("reading config : "+ fichier_xml + "\n" + traceback.format_exc())
+                if DEBUG: print("ERROR reading config : "+ fichier_xml)
+                return
+            #print("   ", p)
+            return p
     
     
     ############################################################################
@@ -178,16 +178,18 @@ class ArchiveManager:
         """
         zipPath = os.path.join(self.dossier, dest_zip)
         if DEBUG: print("to_zip", pwd)
-        if False:#pwd is not None:
-            lst = Path(src_path).glob('**/*.*')
-            lst = [os.path.relpath(f, start=src_path) for f in lst]
-            pyminizip.compress_multiple(lst, 
-                                        [],
-                                        zipPath, pwd, 5)
+        # if False:#pwd is not None:
+        #     lst = Path(src_path).glob('**/*.*')
+        #     lst = [os.path.relpath(f, start=src_path) for f in lst]
+        #     pyminizip.compress_multiple(lst, 
+        #                                 [],
+        #                                 zipPath, pwd, 5)
             
-            return
+        #     return
         if DEBUG: print("     ", zipPath)
         with zipfile.ZipFile(zipPath, 'w') as myzip:
+            if pwd is not None:
+                myzip.setpassword(pwd)
             p = Path(src_path)
 #             for ff in p.glob('**/*.*'):
 #                 print("???3", ff)

@@ -18,13 +18,16 @@ from save_process import RestoreProcess, SaveProcess
 from messages import msg
 from archive import ArchiveManager, get_path_mesdocuments
 from contenu import PROFILS
-from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget, Splash
+from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget, Splash, PasswordWidget, StatusWidget
 from gui.center_tk_window import *
 
 
 import logging
 logging.basicConfig(filename = os.path.join(get_path_mesdocuments(), 'stp.log'), 
-                    level=logging.DEBUG)
+                    level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    encoding = "utf8")
 
 
 base_path = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -35,7 +38,7 @@ class Application(Frame):
     """
 
     def __init__(self, master: Tk, auto_restore = False):
-        super().__init__(master)
+        super().__init__(master, borderwidth=5, relief="ridge")
         
         self.manager = ArchiveManager()
         self.profilConfigSave = PROFILS.copie()  # Par défaut : tous les éléments
@@ -69,30 +72,28 @@ class Application(Frame):
         # Tous les Widgets ...
         self.workplace = WorkplaceWidget(self, self.manager, self.update_profileR)
 #         self.workplace.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
-        self.workplace.grid(row=0, column=0, columnspan = 2, 
-                            padx = 5, pady = 5,
-                            sticky = "nsew")
+        self.workplace.pack(padx = 5, pady = 5)
         
-        self.actions = ActionWidget(self, self.handle_save, self.handle_restore)
+        self.passwordWidget = PasswordWidget(self)
+        self.passwordWidget.pack(padx = 5, pady = 5)
+
+        self.statusWidget = StatusWidget(self)
+        self.statusWidget.pack(padx = 5, pady = 5)
+
+        f = Frame(self)
+        self.actionSave = ActionWidget(f, self.handle_save, 'save', self.profilConfigSave)
 #         self.actions.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
-        self.actions.grid(row=1, column=0, columnspan = 2, 
-                          padx = 5, pady = 5,
-                          sticky = "nsew")
-        
-        self.configS = ConfigWidget(self, self.profilConfigSave)
-#         self.config.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
-        self.configS.grid(row=2, column=0,
-                          padx = 5, pady = 5,
-                          sticky = "nsew")
-        
-        self.configR = ConfigWidget(self, self.profilConfigRest)
-#         self.config.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
-        self.configR.grid(row=2, column=1, 
-                          padx = 5, pady = 5,
-                          sticky = "nsew")
-        
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
+        self.actionSave.pack(side = tkinter.LEFT, 
+                             fill = tkinter.BOTH,
+                             expand = 1,
+                             padx = 5, pady = 5)
+
+        self.actionRestore = ActionWidget(f, self.handle_restore, 'restore', self.profilConfigRest)
+        self.actionRestore.pack(side = tkinter.LEFT, 
+                                fill = tkinter.BOTH,
+                                expand = 1,
+                                padx = 5, pady = 5)
+        f.pack(fill = tkinter.BOTH, expand = 1)
         
         self.process = None
         self.pack(fill=tkinter.X, expand=1)
@@ -101,7 +102,7 @@ class Application(Frame):
     
     def handle_save(self, psw = ""):
 #         self.profilConfigSave.set_grps(self.configS.get_config())
-        self.configS.set_config()
+        self.actionSave.config.set_config()
         self.process = SaveProcess(self.manager, 
                                    self.profilConfigSave, 
                                    psw)
@@ -134,10 +135,15 @@ class Application(Frame):
         if x is None:
             self.process.join()
             self.process = None
-            self.actions.update_status(False, '100%')
+            self.statusWidget.update_status('100%')
+            for button in (self.actionSave.btn, self.actionRestore.btn):
+                button['state'] = 'normal'
         else:
-            self.actions.update_status(True, x + '...')
+            self.statusWidget.update_status(x + '...')
             self.master.after(150, self.update_status)
+            for button in (self.actionSave.btn, self.actionRestore.btn):
+                button['state'] = 'disabled'
+
 
 
     def update_profileR(self, fichier_config: str):
@@ -146,8 +152,8 @@ class Application(Frame):
         if self.profilConfigRest is not None:
 #             print("   ", self.profilConfigRest)
             self.fichier_config = fichier_config
-            self.configR.setProfilConfig(self.profilConfigRest)
-        self.configR.update()
+            self.actionRestore.config.setProfilConfig(self.profilConfigRest)
+        self.actionRestore.config.update()
     
 
     def on_closing(self):

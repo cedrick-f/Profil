@@ -27,10 +27,45 @@ from save_process import SaveProcess
 #################################################################################################
 class ActionWidget(Frame):
     """Interface pour les actions de sauvegarde et de restauration."""
-    def __init__(self, parent: Frame, save_fn: Callable[[], None], restore_fn: Callable[[], None]):
-        Frame.__init__(self, parent)
-        self.save_fn = save_fn
-        self.restore_fn = restore_fn
+    def __init__(self, parent: Frame, fcn: Callable[[], None], msg_code: str, profilConfig: ProfilConfig):
+        super().__init__(parent, borderwidth=5, relief="ridge")
+        self.fcn = fcn
+        
+        self.btn = Button(self, text=msg.get(msg_code), 
+                               command=self.fcn)
+        self.btn.pack()
+        
+        self.config = ConfigWidget(self, profilConfig)
+        self.config.pack()
+
+    def handle_click(self):
+        self.fcn()
+
+
+
+
+#################################################################################################
+class StatusWidget(Frame):
+    """Interface pour afficher le status de la sauvegarde/restauration"""
+    def __init__(self, parent: Frame):
+        super().__init__(parent)
+       
+        self.status = Label(self, text = '...')
+        self.lst_elem: List[ProfilElem] = []
+        self.status.grid(row=3, column=0, columnspan = 2, 
+                         sticky = "nsew")
+        
+
+    def update_status(self, text: str):
+        self.status['text'] = text
+
+
+
+#################################################################################################
+class PasswordWidget(Frame):
+    """Interface pour saisir un mot de passe"""
+    def __init__(self, parent: Frame):
+        super().__init__(parent)
         
         l = Label(self, text = msg.get('password'), justify = 'left')
         l.grid(row=0, column=0, columnspan = 2, sticky="nw")
@@ -38,41 +73,6 @@ class ActionWidget(Frame):
         self.pswd_widget = Entry(self, show="*", width = 15, textvariable = self.psw)
         self.pswd_widget.grid(row=1, column=0, columnspan = 2, 
                               sticky = "nsew")
-        
-        self.save_btn = Button(self, text=msg.get('save'), 
-                               command=self.handle_save_click)
-        self.save_btn.grid(row=2, column=0, 
-                           ipadx = 5, ipady = 5, 
-                           padx = 5, pady = 5,
-                           sticky = "nsew")
-        
-        self.restore_btn = Button(self, text=msg.get('restore'), 
-                                  command=self.handle_restore_click)
-        self.restore_btn.grid(row=2, column=1, 
-                              ipadx = 5, ipady = 5, 
-                              padx = 5, pady = 5,
-                              sticky = "nsew")
-        
-        
-        
-        self.status = Label(self, text = '...')
-        self.lst_elem: List[ProfilElem] = []
-        self.status.grid(row=3, column=0, columnspan = 2, 
-                         sticky = "nsew")
-        
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-
-    def update_status(self, running: bool, text: str):
-        for button in (self.save_btn, self.restore_btn):
-            button['state'] = 'disabled' if running else 'normal'
-        self.status['text'] = text
-
-    def handle_save_click(self):
-        self.save_fn(self.get_psw())
-
-    def handle_restore_click(self):
-        self.restore_fn(self.get_psw())
 
     def get_psw(self):
         return self.psw.get()
@@ -85,7 +85,7 @@ class ConfigWidget(Frame):
     """Interface pour configurer quels éléments seront sauvegardés."""
 
     def __init__(self, parent: Frame, profilConfig: ProfilConfig):
-        Frame.__init__(self, parent)
+        super().__init__(parent)
         self.profilConfig = profilConfig
         
         self.bool_vars: Dict[str, List[BooleanVar, Dict[BooleanVar]]] = {}
@@ -109,23 +109,23 @@ class ConfigWidget(Frame):
             checkbutton.pack(anchor = "w")
             
             # Les éléments ...
-            if len(groupe.lst_elem) > 1:
-                for elem in groupe.lst_elem:
-                    bool_var = BooleanVar()
-                    checkbutton = Checkbutton(self, text=elem.name, 
-                                              variable=bool_var,
-                                              command = lambda: self.manage_buttons(elem.name))
-                    self.bool_vars[groupe.nom][1][elem.name] = bool_var
-                    self.chk_btn[groupe.nom][1][elem.name] = checkbutton
+#             if len(groupe.lst_elem) > 1:
+#                 for elem in groupe.lst_elem:
+#                     bool_var = BooleanVar()
+#                     checkbutton = Checkbutton(self, text=elem.name, 
+#                                               variable=bool_var,
+#                                               command = lambda: self.manage_buttons(elem.name))
+#                     self.bool_vars[groupe.nom][1][elem.name] = bool_var
+#                     self.chk_btn[groupe.nom][1][elem.name] = checkbutton
                     
-                    #grp = self.profilConfig.get_group(groupe.nom)
-#                     if grp is not None and elem.name in grp.get_names():
-#                         checkbutton.configure(state='normal')
-#                         bool_var.set(True)
-#                     else:
-#                         checkbutton.configure(state='disabled')
+#                     #grp = self.profilConfig.get_group(groupe.nom)
+# #                     if grp is not None and elem.name in grp.get_names():
+# #                         checkbutton.configure(state='normal')
+# #                         bool_var.set(True)
+# #                     else:
+# #                         checkbutton.configure(state='disabled')
                       
-                    checkbutton.pack(anchor = "w", padx = (20, 0))
+#                     checkbutton.pack(anchor = "w", padx = (20, 0))
         self.update()
         
         
@@ -184,8 +184,9 @@ class ConfigWidget(Frame):
     def update(self):
         """ Mise à jour de l'état des checkbuttons
         """
-#         print("update", self.profilConfig)
+        #print("update")
         for groupe in PROFILS.groups:
+            #print("   ", groupe.nom)
             if self.profilConfig is not None \
               and groupe.nom in self.profilConfig.get_names():
                 self.chk_btn[groupe.nom][0].configure(state='normal')
@@ -195,18 +196,19 @@ class ConfigWidget(Frame):
                 self.bool_vars[groupe.nom][0].set(False)
             
             # Les éléments ...
-            if len(groupe.lst_elem) > 1:
-                for elem in groupe.lst_elem:
-                    if self.profilConfig is not None:
-                        grp = self.profilConfig.get_group(groupe.nom)
-                    else:
-                        grp = None
-                    if grp is not None and elem.name in grp.get_names():
-                        self.chk_btn[groupe.nom][1][elem.name].configure(state='normal')
-                        self.bool_vars[groupe.nom][1][elem.name].set(True)
-                    else:
-                        self.chk_btn[groupe.nom][1][elem.name].configure(state='disabled')
-                        self.bool_vars[groupe.nom][1][elem.name].set(False)
+            # if len(groupe.lst_elem) > 1:
+            #     for elem in groupe.lst_elem:
+            #         print("   - ", self.chk_btn[groupe.nom])
+            #         if self.profilConfig is not None:
+            #             grp = self.profilConfig.get_group(groupe.nom)
+            #         else:
+            #             grp = None
+            #         if grp is not None and elem.name in grp.get_names():
+            #             self.chk_btn[groupe.nom][1][elem.name].configure(state='normal')
+            #             self.bool_vars[groupe.nom][1][elem.name].set(True)
+            #         else:
+            #             self.chk_btn[groupe.nom][1][elem.name].configure(state='disabled')
+            #             self.bool_vars[groupe.nom][1][elem.name].set(False)
         
 
 #################################################################################################
@@ -236,10 +238,12 @@ class WorkplaceWidget(Frame):
         self.lst_prof.grid(row=2, column=0, columnspan = 2,
                            padx = 5, pady = 5,
                            sticky="nswe")
-        try:
+        if len(self.lst_prof['values']) > 0:
             self.lst_prof.current(0)
-        except:
-            print("ERR1")
+        # try:
+        #     self.lst_prof.current(0)
+        # except:
+        #     print("ERR1")
         self.lst_prof.bind("<<ComboboxSelected>>", lambda x: self.update_profileR())
         
         self.columnconfigure(0, weight=1)

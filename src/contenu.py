@@ -23,7 +23,7 @@ import configparser
 from structure import *
 
 
-DEBUG = False
+DEBUG = True
 
 
 ################################################################################
@@ -170,7 +170,7 @@ class ProfilGroup(XMLMixin):
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
         fail: List[str] = []
-        if DEBUG: print(" Sauver Groupe:", self.nom)
+        if DEBUG: print("  Sauver Groupe:", self.nom)
         for g in self.lst_elem:
 #             print("  ", g.name)
             if g.name == "":
@@ -213,7 +213,7 @@ class ProfilElem(XMLMixin):
                  path: Optional[str] = "", 
                  mode: int = 0):
         super().__init__()
-        if DEBUG: print("ProfilElem", name, "\n", envpath, "\n", path, "\n", mode)
+        #if DEBUG: print("ProfilElem", name, "\n", envpath, "\n", path, "\n", mode)
         
         if envpath is not None and len(envpath) > 0 and os.getenv(envpath) is not None:
             self.env = envpath
@@ -239,7 +239,7 @@ class ProfilElem(XMLMixin):
 
     ############################################################################
     def getFullPath(self):
-        if DEBUG: print("getFullPath", self.env)
+        #if DEBUG: print("getFullPath", self.env)
         logging.info("getFullPath :"+ self.env + " --- "+self.path)
         if len(self.env) > 0:
             return os.path.join(os.getenv(self.env), self.path)
@@ -252,6 +252,8 @@ class ProfilElem(XMLMixin):
         pe = ProfilElem(self.name, self.env, self.path, self.mode)
         return pe
     
+
+
     ############################################################################
     def sauver(self, dest: str) -> List[str]:
         """Copie les fichiers du contenu vers le dossier de destination.
@@ -261,43 +263,47 @@ class ProfilElem(XMLMixin):
         :raises:
             FileExistsError: si dest existe déjà
         """
-        
         fail: List[str] = []
         
         path = self.getFullPath()
-        if DEBUG: print("  Sauver Elem", self.path, "("+path+")")
+        if DEBUG: print("    Sauver Elem", self.path, "("+path+") mode", self.mode)
         
         if self.mode == 0:
             shutil.copy2(path, dest)
+
 
         elif self.mode == 1:
             try:
                 if not os.access(path, os.W_OK):
                     fail.append(path)
-                    logging.error("  Save ERROR (access): "+ path)
-                    if DEBUG: print("  Save ERROR (access):"+ path)
+                    logging.error("    Save ERROR (access): "+ path)
+                    if DEBUG: print("    Save ERROR (access):"+ path)
                     return fail
                 shutil.rmtree(dest)
                 shutil.copytree(path, dest)    # py3.8 : , dirs_exist_ok = True)
                 logging.info('  Saved 1 :'+ path)
-                if DEBUG: print('  Saved 1 :'+ path)
+                if DEBUG: print('    > Saved 1 :'+ path)
             except shutil.Error as exc:
                 errors = exc.args[0]
                 for error in errors:
                     src, dst, msg = error
                     fail.append(src)
-                    logging.error("  Save ERROR :"+ src+" "+ msg)
-                    if DEBUG: print("  Save ERROR :"+ src, msg)
+                    logging.error("    Save ERROR :"+ src+" "+ msg)
+                    if DEBUG: print("    Save ERROR :"+ src, msg)
+
 
         elif self.mode == 2:
-            for f in glob.glob(path):
-#                 print("+++", f, self.path)
+            if os.path.isdir(path):
+                path = os.path.join(path, "*.*")
+                if DEBUG: print("    >>", path)
+            for f in glob.glob(path, include_hidden = True):
+                if DEBUG: print("    +++", f)
                 # Astuce pour copier les fichier "cachés"
-                if os.path.basename(f).startswith('.'):
+                if False:#os.path.basename(f).startswith('.'):
                     #cwd = os.getcwd()
-#                     print("!!!!", os.path.basename(f))
+                    if DEBUG: print("    !!!!", f)
                     e = shutil.copyfile(f, os.path.join(dest, "_"+os.path.basename(f)))
-                    if DEBUG: print("  Err:",e)
+                    if DEBUG: print("    Err:",e)
 #                     p = Path(dest)
 #                     for ff in p.glob('**/*.*'):
 #                         print("???1", ff)
@@ -317,19 +323,25 @@ class ProfilElem(XMLMixin):
 #                     shutil.copy2(os.path.join(pp, "_"+fff), dest)
 #                     os.rename(os.path.join(dest, "_"+fff), os.path.join(dest, fff))
                 else:
+                    if DEBUG: print("    !!!!", f)
                     shutil.copy2(f, dest)
                 
-                logging.info('  Saved 2 :'+ f)
-                if DEBUG: print('  Saved 2 :'+ f)
+                logging.info('    Saved 2 :'+ f)
+                if DEBUG: print('    > Saved 2 :'+ f)
             
                 
         elif self.mode == 3:
-            for f in glob.glob(path, recursive = True):
+            if os.path.isdir(path):
+                path = os.path.join(path, "**", "*.*")
+                if DEBUG: print("    >>", path)
+            for f in glob.glob(path, recursive = True, include_hidden = True):
                 shutil.copy2(f, dest)
-                logging.info('  Saved 3 :'+ f)
-                if DEBUG: print('  Saved 3 :'+ f)
+                logging.info('    Saved 3 :'+ f)
+                if DEBUG: print('    > Saved 3 :'+ f)
                 
         return fail
+
+
 
     ############################################################################
     def restaurer(self, source: str) -> List[str]:
@@ -388,8 +400,8 @@ class ProfilElem(XMLMixin):
 # Modes de copie :
 # 0: Tous les fichiers du dossier
 # 1: Tous les fichiers du dossier et des sous dossiers
-# 2: Tous les fichiers du dossier, filtrés
-# 3: Tous les fichiers du dossier et des sous dossiers, filtrés
+# 2: Tous les fichiers, filtrés (*, ?, [ranges])
+# 3: Tous les fichiers et sous dossiers, filtrés (*, ?, [ranges])
     
 
 
@@ -398,10 +410,17 @@ PROFILS = ProfilConfig()
 if DEBUG:
     # Un dossier pour faire des tests en toute sécurité
     __TEST = ProfilGroup("Test")
-    __TEST.add_elem("f", 'USERPROFILE', os.path.join(".test"), 2)
+    __TEST.add_elem("f", 'USERPROFILE', os.path.join("test"), 2)
     __TEST.add_elem("d", 'USERPROFILE', os.path.join(".dtest"), 1)
     __TEST.add_elem("a", 'APPDATA', os.path.join("atest"), 1)
+
+    __TEST2 = ProfilGroup("Test2")
+    __TEST2.add_elem("f", 'USERPROFILE', os.path.join(".test2"), 2)
+    __TEST2.add_elem("d", 'USERPROFILE', os.path.join(".dtest2"), 3)
+    __TEST2.add_elem("a", 'APPDATA', os.path.join("atest2"), 1)
+
     PROFILS.add_grp(__TEST)
+    PROFILS.add_grp(__TEST2)
     
 else:
     mozilla_profile = os.path.join(os.getenv('APPDATA'), 'Mozilla', 'Firefox')
@@ -462,8 +481,13 @@ else:
     __SSH = ProfilGroup("Clés SSH")
     __SSH.add_elem("", 'USERPROFILE', os.path.join(".ssh."), 1)
 
-    PROFILS.add_grp(__FF)
+    __NXT = ProfilGroup("NextCloud")
+    __NXT.add_elem("Roaming", 'APPDATA', os.path.join('Nextcloud'), 1)
+    __NXT.add_elem("Local", 'LOCALAPPDATA', os.path.join('Nextcloud'), 1)
+
+    #PROFILS.add_grp(__FF)
     PROFILS.add_grp(__BUR)
+    PROFILS.add_grp(__NXT)
     PROFILS.add_grp(__GD)
     PROFILS.add_grp(__PYZ)
     PROFILS.add_grp(__VEY)
@@ -472,7 +496,7 @@ else:
     PROFILS.add_grp(__GIT)
     PROFILS.add_grp(__SSH)
     PROFILS.add_grp(__PYT)
-    PROFILS.add_grp(__COD)
+    #PROFILS.add_grp(__COD)
 
 
 
