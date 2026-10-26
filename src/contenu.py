@@ -21,6 +21,7 @@ import configparser
 ###############################################################################
 # Modules "application"
 from structure import *
+from windows_credential_manager import list_credentials
 
 
 DEBUG = True
@@ -57,33 +58,21 @@ class ProfilConfig(XMLMixin):
     
     
     
-#     ############################################################################
-#     def set_grps(self, lst_grp):
-# #         print("set_grps", lst_grp)
-#         self.groups = []
-#         for g in lst_grp:
-#             self.add_grp(PROFILS.get_group(g))
-# #         print(">>>", self)
-            
-#     ############################################################################
-#     def set_config(self, lst_grp):
-#         self.groups = []
-#         for g in lst_grp:
-#             self.add_grp(g)
+
             
     ############################################################################
     def set_config(self, profils: Dict[str, List[str]]):
         """ Modifie la configuration (groupes et éléments sélectionnés)
             en utilisant la structure fournie par ConfigWidget.get_config()
         """
-#         print("set_config")
+        if DEBUG: print("set_config")
         self.groups = []
         for grp in PROFILS.groups:
             if grp.nom in profils:
                 pg = ProfilGroup(grp.nom)
                 pg.set_config(profils[grp.nom])
                 self.groups.append(pg)
-#         print(">>>", self)
+        if DEBUG: print(">>>", self)
     
     
     ############################################################################
@@ -115,10 +104,9 @@ class ProfilConfig(XMLMixin):
         """
         fail: List[str] = []
         for group in self.groups:
-#             print("       ", group.nom)
+            if DEBUG: print("       ", group.nom)
             fail.extend(group.restaurer(path.join(source, group.nom)))
         return fail
-
 
 
 
@@ -172,7 +160,6 @@ class ProfilGroup(XMLMixin):
         fail: List[str] = []
         if DEBUG: print("  Sauver Groupe:", self.nom)
         for g in self.lst_elem:
-#             print("  ", g.name)
             if g.name == "":
                 fail.extend(g.sauver(dest))
 
@@ -189,7 +176,7 @@ class ProfilGroup(XMLMixin):
         """ Restaure les fichiers du dossier source vers le dossier d'origine
             Renvoie la liste des fichiers qui n'ont pas été copiés
         """
-#         print("restaurer", self, source)
+
         fail: List[str] = []
         for group in self.lst_elem:
             if group.name is None:
@@ -202,7 +189,6 @@ class ProfilGroup(XMLMixin):
         return fail
         
     
-
 
 ################################################################################
 class ProfilElem(XMLMixin):
@@ -228,7 +214,7 @@ class ProfilElem(XMLMixin):
         #  1 = dossier complet
         #  2 = linux-like
         #  3 = linux-like + recursif
-        assert 0 <= mode <= 3, "Le mode de copie '%s' n'existe pas." % mode
+        assert 0 <= mode <= 4, "Le mode de copie '%s' n'existe pas." % mode
         self.mode = mode
 
 
@@ -304,24 +290,24 @@ class ProfilElem(XMLMixin):
                     if DEBUG: print("    !!!!", f)
                     e = shutil.copyfile(f, os.path.join(dest, "_"+os.path.basename(f)))
                     if DEBUG: print("    Err:",e)
-#                     p = Path(dest)
-#                     for ff in p.glob('**/*.*'):
-#                         print("???1", ff)
-#                     os.chdir(dest)
+                    # p = Path(dest)
+                    # for ff in p.glob('**/*.*'):
+                    #     print("???1", ff)
+                    # os.chdir(dest)
                     
                     os.rename(os.path.join(dest,"_"+os.path.basename(f)), 
                               os.path.join(dest, os.path.basename(f)))
-#                     os.chdir(cwd)
-#                     for ff in p.glob('**/*.*'):
-#                         print("???2", ff)
-#                 pp, ff = os.path.split(f)
-#                 fff, eee = os.path.splitext(ff)
-#                 print(pp, " - ", fff, " - ", eee)
-#                 if eee == '':
-#                     print("   xxx-", fff)
-#                     os.rename(f, os.path.join(pp, "_"+fff))
-#                     shutil.copy2(os.path.join(pp, "_"+fff), dest)
-#                     os.rename(os.path.join(dest, "_"+fff), os.path.join(dest, fff))
+                #     os.chdir(cwd)
+                #     for ff in p.glob('**/*.*'):
+                #         print("???2", ff)
+                # pp, ff = os.path.split(f)
+                # fff, eee = os.path.splitext(ff)
+                # print(pp, " - ", fff, " - ", eee)
+                # if eee == '':
+                #     print("   xxx-", fff)
+                #     os.rename(f, os.path.join(pp, "_"+fff))
+                #     shutil.copy2(os.path.join(pp, "_"+fff), dest)
+                #     os.rename(os.path.join(dest, "_"+fff), os.path.join(dest, fff))
                 else:
                     if DEBUG: print("    !!!!", f)
                     shutil.copy2(f, dest)
@@ -338,6 +324,12 @@ class ProfilElem(XMLMixin):
                 shutil.copy2(f, dest)
                 logging.info('    Saved 3 :'+ f)
                 if DEBUG: print('    > Saved 3 :'+ f)
+
+        elif self.mode == 4:    # Credential
+            entries = list_credentials(self.path)
+            if DEBUG: print(entries)
+            for target in ...:
+                ...
                 
         return fail
 
@@ -379,6 +371,10 @@ class ProfilElem(XMLMixin):
                 for f in glob.glob(source, recursive = True):
                     shutil.copy2(f, path)
 
+            elif self.mode == 4:    # Credential
+                for target in ...:
+                    ...
+
         except Exception as exc:
             logging.info('ERROR : '+ traceback.format_exc())
 #             errors = exc.args[0]
@@ -402,6 +398,7 @@ class ProfilElem(XMLMixin):
 # 1: Tous les fichiers du dossier et des sous dossiers
 # 2: Tous les fichiers, filtrés (*, ?, [ranges])
 # 3: Tous les fichiers et sous dossiers, filtrés (*, ?, [ranges])
+# 4: credentials
     
 
 
@@ -413,12 +410,14 @@ if DEBUG:
     __TEST.add_elem("f", 'USERPROFILE', os.path.join("test"), 2)
     __TEST.add_elem("d", 'USERPROFILE', os.path.join(".dtest"), 1)
     __TEST.add_elem("a", 'APPDATA', os.path.join("atest"), 1)
+    __TEST.add_elem("NextCloud", '', "Nextcloud_*", 4)
 
     __TEST2 = ProfilGroup("Test2")
     __TEST2.add_elem("f", 'USERPROFILE', os.path.join(".test2"), 2)
     __TEST2.add_elem("d", 'USERPROFILE', os.path.join(".dtest2"), 3)
     __TEST2.add_elem("a", 'APPDATA', os.path.join("atest2"), 1)
-
+    
+    
     PROFILS.add_grp(__TEST)
     PROFILS.add_grp(__TEST2)
     

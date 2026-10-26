@@ -22,6 +22,7 @@ from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget, Splash, Pas
 from gui.center_tk_window import *
 
 
+
 import logging
 logging.basicConfig(filename = os.path.join(get_path_mesdocuments(), 'stp.log'), 
                     level=logging.DEBUG,
