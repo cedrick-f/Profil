@@ -43,13 +43,19 @@ import save_process
 def get_path_mesdocuments():
     """ Renvoie le chemin absolu du dossier personnel
          = "Mes documents" sous Windows
+        
+        Si l'application est lancée depuis les sources (python stp.py),
+        renvoie à la place un dossier "test", frère du dossier "src",
+        pour pouvoir essayer sauvegarde/restauration sans toucher aux vrais documents.
+        (Version .exe générée par setup.py : sys.frozen est défini -> vrai dossier.)
+
     """
     # Si lancé depuis stp.py :
     if not getattr(sys, "frozen", False):
         dossier_test = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test")
         os.makedirs(dossier_test, exist_ok=True)
         return dossier_test
-        
+
     # Si lancé depuis stp.exe :
     try:
         return shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL, None, 0)
