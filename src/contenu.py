@@ -23,8 +23,8 @@ import configparser
 from structure import *
 from windows_credential_manager import list_credentials
 
-
-DEBUG = True
+from mode import TEST
+DEBUG = TEST
 
 
 ################################################################################

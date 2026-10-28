@@ -51,7 +51,7 @@ def get_path_mesdocuments():
 
     """
     # Si lancé depuis stp.py :
-    if not getattr(sys, "frozen", False):
+    if TEST:
         dossier_test = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test")
         os.makedirs(dossier_test, exist_ok=True)
         return dossier_test
