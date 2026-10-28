@@ -11,6 +11,19 @@
 import os, sys, time
 from tkinter import Frame, Tk, messagebox
 
+# --- Mode test : lancement par "python stp.py" (pas par le .exe) ---------------
+# On redirige les variables d'environnement vers test/home AVANT d'importer
+# les modules de l'application : contenu.py n'a alors rien à changer.
+if not getattr(sys, "frozen", False):
+    _home = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         "test", "home")
+    os.environ["USERPROFILE"] = _home
+    os.environ["APPDATA"] = os.path.join(_home, "AppData", "Roaming")
+    os.environ["LOCALAPPDATA"] = os.path.join(_home, "AppData", "Local")
+    for _v in ("USERPROFILE", "APPDATA", "LOCALAPPDATA"):
+        os.makedirs(os.environ[_v], exist_ok=True)
+# ------------------------------------------------------------------------------
+
 
 ###############################################################################
 # Modules "application"
