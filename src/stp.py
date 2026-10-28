@@ -121,7 +121,7 @@ class Application(Frame):
                                           self.profilConfigRest,
                                           self.fichier_config, 
                                           password)
-            
+            logging.info('Retoring ...')
             self.process.start()
             self.process.join()
             if hasattr(self, 'configR'):
