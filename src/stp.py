@@ -22,7 +22,6 @@ from gui.widgets import ActionWidget, ConfigWidget, WorkplaceWidget, Splash, Pas
 from gui.center_tk_window import *
 
 
-
 import logging
 logging.basicConfig(filename = os.path.join(get_path_mesdocuments(), 'stp.log'), 
                     level=logging.DEBUG,
@@ -101,21 +100,19 @@ class Application(Frame):
         
     
     
-    def handle_save(self, psw = ""):
+    def handle_save(self, password = ""):
 #         self.profilConfigSave.set_grps(self.configS.get_config())
         self.actionSave.config.set_config()
         self.process = SaveProcess(self.manager, 
                                    self.profilConfigSave, 
-                                   psw)
+                                   password)
         logging.info('Saving ...')
         self.process.start()
         self.process.join()
         self.update_status()
         self.workplace.update()
 
-    def handle_restore(self, psw = ""):
-        #self.testRetore()
-        #return
+    def handle_restore(self, password = ""):
         if self.profilConfigRest is not None:
 #             print("Restore :", self.profilConfigRest)
             if hasattr(self, 'configR'):
@@ -123,7 +120,7 @@ class Application(Frame):
             self.process = RestoreProcess(self.manager, 
                                           self.profilConfigRest,
                                           self.fichier_config, 
-                                          psw)
+                                          password)
             
             self.process.start()
             self.process.join()
@@ -164,15 +161,8 @@ class Application(Frame):
             return
         root.destroy()
         
-    def testRetore(self):
-        print("restore")
-        import time
-        time.sleep(3)
-        print("fini !")
 
-
-
-
+######################################################################################
 if __name__ == '__main__':
     root = Tk()
     auto_restore = len(sys.argv) > 1 and sys.argv[1] == '-r'

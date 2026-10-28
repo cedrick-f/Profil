@@ -33,11 +33,11 @@ class SaveProcess(Thread):
 
     def __init__(self, manager: ArchiveManager, 
                  profil_config: ProfilConfig, 
-                 psw: str):
+                 password: str):
         super().__init__()
         self.profil_config = profil_config
         self.manager = manager
-        self.psw = psw
+        self.password = password
         self.queue = Queue()
 
     def run(self):
@@ -52,7 +52,7 @@ class SaveProcess(Thread):
             self.queue.put(msg.get('unzipping'))
             self.manager.to_zip(temp.name, 
                                 filename,
-                                self.psw)
+                                self.password)
         except Exception as e:
             logging.info('ERROR : '+ traceback.format_exc())
             if DEBUG: print('ERROR : '+ traceback.format_exc())
@@ -66,13 +66,13 @@ class RestoreProcess(SaveProcess):
     def __init__(self, manager: ArchiveManager, 
                  profil_config: ProfilConfig, 
                  fichier_config: str, 
-                 psw: str):
+                 password: str):
         super().__init__(manager, profil_config, psw)
         self.profil_config = profil_config
         self.fichier_config = fichier_config
         if DEBUG: print("RestoreProcess", self.profil_config)
         self.manager = manager
-        self.psw = psw
+        self.password = password
 
     def run(self):
         temp = TemporaryDirectory()
@@ -83,7 +83,7 @@ class RestoreProcess(SaveProcess):
             self.queue.put(msg.get('unzipping'))
             self.manager.from_zip(self.fichier_config, 
                                   temp.name,
-                                  self.psw)
+                                  self.password)
             if DEBUG: print("   ", temp.name)
                 
             
