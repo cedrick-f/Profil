@@ -198,6 +198,22 @@ class ProfilGroup(XMLMixin):
     
 
 ################################################################################
+################################################################################
+def _trace(niveau: int, message: str):
+    """Écrit un message dans le log (et à l'écran en mode DEBUG)."""
+    logging.log(niveau, message)
+    if DEBUG: print("   ", logging.getLevelName(niveau), ":", message)
+
+
+def _est_dans(enfant: str, parent: str) -> bool:
+    """True si `enfant` est le dossier `parent` ou se trouve à l'intérieur."""
+    enfant = os.path.normcase(os.path.realpath(enfant))
+    parent = os.path.normcase(os.path.realpath(parent))
+    try:
+        return os.path.commonpath([enfant, parent]) == parent
+    except ValueError:      # lecteurs différents (C: et D:) sous Windows
+        return False
+
 class ProfilElem(XMLMixin):
     """Un élément d'un profil à sauvegarder (fichier ou dossier)."""
 
@@ -245,100 +261,237 @@ class ProfilElem(XMLMixin):
         pe = ProfilElem(self.name, self.env, self.path, self.mode)
         return pe
     
-
-
-    ############################################################################
+        ############################################################################
     def sauver(self, dest: str) -> List[str]:
-        """Copie les fichiers du contenu vers le dossier de destination.
+        """Copie les fichiers de l'élément vers le dossier de destination.
 
-        :param dest: Dossier de destination
+        Un fichier qui pose problème est consigné dans le log et dans la liste
+        renvoyée, mais n'interrompt pas la sauvegarde des autres.
+
+        :param dest: Dossier de destination (doit exister)
         :return: Renvoie la liste des fichiers qui n'ont pas été copiés
-        :raises:
-            FileExistsError: si dest existe déjà
         """
-        fail: List[str] = []
-        
-        path = self.getFullPath()
-        if DEBUG: print("    Sauver Elem", self.path, "("+path+") mode", self.mode)
-        
-        if self.mode == 0:
-            shutil.copy2(path, dest)
-
-
-        elif self.mode == 1:
-            try:
-                if not os.access(path, os.W_OK):
-                    fail.append(path)
-                    logging.error("    Save ERROR (access): "+ path)
-                    if DEBUG: print("    Save ERROR (access):"+ path)
-                    return fail
-                shutil.rmtree(dest)
-                shutil.copytree(path, dest)    # py3.8 : , dirs_exist_ok = True)
-                logging.info('  Saved 1 :'+ path)
-                if DEBUG: print('    > Saved 1 :'+ path)
-            except shutil.Error as exc:
-                errors = exc.args[0]
-                for error in errors:
-                    src, dst, msg = error
-                    fail.append(src)
-                    logging.error("    Save ERROR :"+ src+" "+ msg)
-                    if DEBUG: print("    Save ERROR :"+ src, msg)
-
-
-        elif self.mode == 2:
-            if os.path.isdir(path):
-                path = os.path.join(path, "*.*")
-                if DEBUG: print("    >>", path)
-            for f in glob.glob(path, include_hidden = True):
-                if DEBUG: print("    +++", f)
-                # Astuce pour copier les fichier "cachés"
-                if False:#os.path.basename(f).startswith('.'):
-                    #cwd = os.getcwd()
-                    if DEBUG: print("    !!!!", f)
-                    e = shutil.copyfile(f, os.path.join(dest, "_"+os.path.basename(f)))
-                    if DEBUG: print("    Err:",e)
-                    # p = Path(dest)
-                    # for ff in p.glob('**/*.*'):
-                    #     print("???1", ff)
-                    # os.chdir(dest)
-                    
-                    os.rename(os.path.join(dest,"_"+os.path.basename(f)), 
-                              os.path.join(dest, os.path.basename(f)))
-                #     os.chdir(cwd)
-                #     for ff in p.glob('**/*.*'):
-                #         print("???2", ff)
-                # pp, ff = os.path.split(f)
-                # fff, eee = os.path.splitext(ff)
-                # print(pp, " - ", fff, " - ", eee)
-                # if eee == '':
-                #     print("   xxx-", fff)
-                #     os.rename(f, os.path.join(pp, "_"+fff))
-                #     shutil.copy2(os.path.join(pp, "_"+fff), dest)
-                #     os.rename(os.path.join(dest, "_"+fff), os.path.join(dest, fff))
-                else:
-                    if DEBUG: print("    !!!!", f)
-                    shutil.copy2(f, dest)
-                
-                logging.info('    Saved 2 :'+ f)
-                if DEBUG: print('    > Saved 2 :'+ f)
-            
-                
-        elif self.mode == 3:
-            if os.path.isdir(path):
-                path = os.path.join(path, "**", "*.*")
-                if DEBUG: print("    >>", path)
-            for f in glob.glob(path, recursive = True, include_hidden = True):
-                shutil.copy2(f, dest)
-                logging.info('    Saved 3 :'+ f)
-                if DEBUG: print('    > Saved 3 :'+ f)
-
-        elif self.mode == 4:    # Credential
+        if self.mode == 4:      # Credential (en travaux)
+            fail: List[str] = []
             entries = list_credentials(self.path)
             # if DEBUG: print(entries)
             # for target in ...:
             #     ...
-                
+            return fail
+
+        src = self.getFullPath()
+        _trace(logging.INFO, "Sauver '%s' : %s (mode %d)" % (self.name, src, self.mode))
+
+        # --- Destination : un dossier existant, où l'on peut écrire -----------
+        if not os.path.isdir(dest) or not os.access(dest, os.W_OK):
+            _trace(logging.ERROR, "Destination inaccessible en écriture : " + dest)
+            return [src]
+
+        # --- Source : jamais de chemin relatif (il serait lu depuis le dossier
+        #     courant), par ex. si la variable d'environnement n'existe pas ----
+        if not os.path.isabs(src):
+            _trace(logging.ERROR, "Chemin non absolu, ignoré : " + src)
+            return [src]
+
+        if self.mode == 0:
+            return self._sauver_fichier(src, dest)
+        if self.mode == 1:
+            return self._sauver_dossier(src, dest)
+        if self.mode in (2, 3):
+            return self._sauver_filtre(src, dest, recursif = (self.mode == 3))
+
+        _trace(logging.ERROR, "Mode de copie inconnu : %s" % self.mode)
+        return [src]
+
+
+    ############################################################################
+    @staticmethod
+    def _copier_fichier(f: str, dest: str) -> bool:
+        """Copie un fichier dans `dest` (sans sous-dossier). Renvoie True si réussi."""
+        if not os.access(f, os.R_OK):
+            _trace(logging.ERROR, "Fichier non lisible : " + f)
+            return False
+
+        # Les fichiers sont copiés à plat : deux fichiers de même nom
+        # s'écraseraient. On garde le premier, et on signale le second.
+        if os.path.exists(os.path.join(dest, os.path.basename(f))):
+            _trace(logging.WARNING, "Nom déjà présent, fichier non copié : " + f)
+            return False
+
+        # Ce try est volontaire : os.access ne détecte pas tout (surtout sous
+        # Windows : fichier verrouillé par un autre programme, disque plein,
+        # chemin trop long...). On intercepte donc l'erreur, fichier par fichier.
+        try:
+            shutil.copy2(f, dest)
+        except OSError as exc:
+            _trace(logging.ERROR, "Copie impossible : %s (%s)" % (f, exc))
+            return False
+
+        _trace(logging.INFO, "Sauvé : " + f)
+        return True
+
+
+    ############################################################################
+    def _sauver_fichier(self, src: str, dest: str) -> List[str]:
+        """Mode 0 : un fichier unique."""
+        if not os.path.exists(src):
+            _trace(logging.WARNING, "Absent, rien à sauver : " + src)
+            return []
+        if not os.path.isfile(src):
+            _trace(logging.ERROR, "N'est pas un fichier : " + src)
+            return [src]
+        return [] if self._copier_fichier(src, dest) else [src]
+
+
+    ############################################################################
+    def _sauver_dossier(self, src: str, dest: str) -> List[str]:
+        """Mode 1 : un dossier complet, avec ses sous-dossiers."""
+        if not os.path.exists(src):
+            _trace(logging.WARNING, "Absent, rien à sauver : " + src)
+            return []
+        if not os.path.isdir(src):
+            _trace(logging.ERROR, "N'est pas un dossier : " + src)
+            return [src]
+        if not os.access(src, os.R_OK | os.X_OK):
+            _trace(logging.ERROR, "Dossier non lisible : " + src)
+            return [src]
+        if _est_dans(dest, src):
+            # ex. sauver tout AppData\Local alors que le dossier temporaire s'y trouve
+            _trace(logging.ERROR, "Destination à l'intérieur de la source : " + src)
+            return [src]
+
+        fail: List[str] = []
+        # Ici le try est indispensable : copytree continue après une erreur sur
+        # un fichier, et ne les signale qu'à la fin, par une exception.
+        try:
+            shutil.copytree(src, dest, dirs_exist_ok = True, ignore_dangling_symlinks = True)
+        except shutil.Error as exc:
+            for erreur in exc.args[0]:
+                fail.append(erreur[0])
+                _trace(logging.ERROR, "Copie impossible : %s (%s)" % (erreur[0], erreur[2]))
+        except OSError as exc:      # erreur sur le dossier lui-même
+            fail.append(src)
+            _trace(logging.ERROR, "Copie impossible : %s (%s)" % (src, exc))
+        else:
+            _trace(logging.INFO, "Sauvé : " + src)
         return fail
+
+
+    ############################################################################
+    def _sauver_filtre(self, src: str, dest: str, recursif: bool) -> List[str]:
+        """Modes 2 et 3 : les fichiers qui correspondent à un filtre (*, ?, [..]).
+        `src` peut être un motif, ou un dossier (dont on prend les fichiers *.*)
+        """
+        motif = src
+        if os.path.isdir(src):
+            base = glob.escape(src)     # un nom de dossier peut contenir des [ ]
+            motif = os.path.join(base, "**", "*.*") if recursif else os.path.join(base, "*.*")
+
+        fichiers = glob.glob(motif, recursive = recursif, include_hidden = True)
+        if len(fichiers) == 0:
+            _trace(logging.WARNING, "Aucun fichier ne correspond à : " + motif)
+            return []
+
+        fail: List[str] = []
+        for f in fichiers:
+            if os.path.isdir(f):        # un dossier nommé "x.y" n'est pas un fichier
+                continue
+            if not self._copier_fichier(f, dest):
+                fail.append(f)
+        return fail
+
+    # ############################################################################
+    # def sauver(self, dest: str) -> List[str]:
+    #     """Copie les fichiers du contenu vers le dossier de destination.
+
+    #     :param dest: Dossier de destination
+    #     :return: Renvoie la liste des fichiers qui n'ont pas été copiés
+    #     :raises:
+    #         FileExistsError: si dest existe déjà
+    #     """
+    #     fail: List[str] = []
+        
+    #     path = self.getFullPath()
+    #     if DEBUG: print("    Sauver Elem", self.path, "("+path+") mode", self.mode)
+        
+    #     if self.mode == 0:
+    #         shutil.copy2(path, dest)
+
+
+    #     elif self.mode == 1:
+    #         try:
+    #             if not os.access(path, os.W_OK):
+    #                 fail.append(path)
+    #                 logging.error("    Save ERROR (access): "+ path)
+    #                 if DEBUG: print("    Save ERROR (access):"+ path)
+    #                 return fail
+    #             shutil.rmtree(dest)
+    #             shutil.copytree(path, dest)    # py3.8 : , dirs_exist_ok = True)
+    #             logging.info('  Saved 1 :'+ path)
+    #             if DEBUG: print('    > Saved 1 :'+ path)
+    #         except shutil.Error as exc:
+    #             errors = exc.args[0]
+    #             for error in errors:
+    #                 src, dst, msg = error
+    #                 fail.append(src)
+    #                 logging.error("    Save ERROR :"+ src+" "+ msg)
+    #                 if DEBUG: print("    Save ERROR :"+ src, msg)
+
+
+    #     elif self.mode == 2:
+    #         if os.path.isdir(path):
+    #             path = os.path.join(path, "*.*")
+    #             if DEBUG: print("    >>", path)
+    #         for f in glob.glob(path, include_hidden = True):
+    #             if DEBUG: print("    +++", f)
+    #             # Astuce pour copier les fichier "cachés"
+    #             if False:#os.path.basename(f).startswith('.'):
+    #                 #cwd = os.getcwd()
+    #                 if DEBUG: print("    !!!!", f)
+    #                 e = shutil.copyfile(f, os.path.join(dest, "_"+os.path.basename(f)))
+    #                 if DEBUG: print("    Err:",e)
+    #                 # p = Path(dest)
+    #                 # for ff in p.glob('**/*.*'):
+    #                 #     print("???1", ff)
+    #                 # os.chdir(dest)
+                    
+    #                 os.rename(os.path.join(dest,"_"+os.path.basename(f)), 
+    #                           os.path.join(dest, os.path.basename(f)))
+    #             #     os.chdir(cwd)
+    #             #     for ff in p.glob('**/*.*'):
+    #             #         print("???2", ff)
+    #             # pp, ff = os.path.split(f)
+    #             # fff, eee = os.path.splitext(ff)
+    #             # print(pp, " - ", fff, " - ", eee)
+    #             # if eee == '':
+    #             #     print("   xxx-", fff)
+    #             #     os.rename(f, os.path.join(pp, "_"+fff))
+    #             #     shutil.copy2(os.path.join(pp, "_"+fff), dest)
+    #             #     os.rename(os.path.join(dest, "_"+fff), os.path.join(dest, fff))
+    #             else:
+    #                 if DEBUG: print("    !!!!", f)
+    #                 shutil.copy2(f, dest)
+                
+    #             logging.info('    Saved 2 :'+ f)
+    #             if DEBUG: print('    > Saved 2 :'+ f)
+            
+                
+    #     elif self.mode == 3:
+    #         if os.path.isdir(path):
+    #             path = os.path.join(path, "**", "*.*")
+    #             if DEBUG: print("    >>", path)
+    #         for f in glob.glob(path, recursive = True, include_hidden = True):
+    #             shutil.copy2(f, dest)
+    #             logging.info('    Saved 3 :'+ f)
+    #             if DEBUG: print('    > Saved 3 :'+ f)
+
+    #     elif self.mode == 4:    # Credential
+    #         entries = list_credentials(self.path)
+    #         # if DEBUG: print(entries)
+    #         # for target in ...:
+    #         #     ...
+                
+    #     return fail
 
 
 
