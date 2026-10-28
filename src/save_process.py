@@ -16,10 +16,14 @@ from tempfile import TemporaryDirectory
 from threading import Thread
 import logging, traceback
 
+# DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
+# DEBUG = False : lancé par le .exe          (cx_Freeze définit sys.frozen)
+DEBUG = not getattr(sys, "frozen", False)
+
 ###############################################################################
 # Modules "application"
 from archive import ArchiveManager
-from contenu import ProfilConfig, PROFILS, DEBUG
+from contenu import ProfilConfig, PROFILS
 from messages import msg
 
 

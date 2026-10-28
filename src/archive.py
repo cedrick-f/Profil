@@ -26,9 +26,13 @@ from genericpath import isfile
 from zipfile import BadZipfile
 #import pyminizip
 
+# DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
+# DEBUG = False : lancé par le .exe          (cx_Freeze définit sys.frozen)
+DEBUG = not getattr(sys, "frozen", False)
+
 ###############################################################################
 # Modules "application"
-from contenu import ProfilConfig, DEBUG
+from contenu import ProfilConfig
 import save_process
 
 
@@ -51,7 +55,7 @@ def get_path_mesdocuments():
 
     """
     # Si lancé depuis stp.py :
-    if TEST:
+    if DEBUG:
         dossier_test = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test")
         os.makedirs(dossier_test, exist_ok=True)
         return dossier_test

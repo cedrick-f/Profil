@@ -10,12 +10,12 @@
 ################################################################################
 import os, sys, time
 from tkinter import Frame, Tk, messagebox
-from mode import TEST
 
-# --- Mode test : lancement par "python stp.py" (pas par le .exe) ---------------
-# On redirige les variables d'environnement vers test/home AVANT d'importer
-# les modules de l'application : contenu.py n'a alors rien à changer.
-if TEST:
+
+# DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
+# DEBUG = False : lancé par le .exe          (cx_Freeze définit sys.frozen)
+DEBUG = not getattr(sys, "frozen", False)
+if DEBUG:
     _home = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                          "test", "home")
     os.environ["USERPROFILE"] = _home
@@ -179,7 +179,8 @@ class Application(Frame):
 ######################################################################################
 if __name__ == '__main__':
     root = Tk()
-    auto_restore = len(sys.argv) > 1 and sys.argv[1] == '-r'
+    auto_restore = len(sys.argv) > 1 and sys.argv[1] == '-r' and not DEBUG
+    if DEBUG: print("auto_restore :",auto_restore)
     app = Application(root, auto_restore = auto_restore)
     center_on_screen(root)
     if not auto_restore:

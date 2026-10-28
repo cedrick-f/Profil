@@ -18,13 +18,16 @@ from pathlib import Path
 import logging, traceback
 import configparser
 
+# DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
+# DEBUG = False : lancé par le .exe          (cx_Freeze définit sys.frozen)
+DEBUG = not getattr(sys, "frozen", False)
+
 ###############################################################################
 # Modules "application"
 from structure import *
 from windows_credential_manager import list_credentials
 
-from mode import TEST
-DEBUG = TEST
+
 
 
 ################################################################################
