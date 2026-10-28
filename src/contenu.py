@@ -365,6 +365,13 @@ class ProfilElem(XMLMixin):
         """Mode 1 : un dossier complet, avec ses sous-dossiers."""
         if not os.path.exists(src):
             _trace(logging.WARNING, "Absent, rien à sauver : " + src)
+            if self.name:
+                # Ne pas laisser de dossier vide dans l'archive : "absent" ne doit pas
+                # être confondu avec "présent mais vide" (qui, lui, est sauvegardé)
+                try:
+                    os.rmdir(dest)
+                except OSError:
+                    pass
             return []
         if not os.path.isdir(src):
             _trace(logging.ERROR, "N'est pas un dossier : " + src)
@@ -376,7 +383,8 @@ class ProfilElem(XMLMixin):
             # ex. sauver tout AppData\Local alors que le dossier temporaire s'y trouve
             _trace(logging.ERROR, "Destination à l'intérieur de la source : " + src)
             return [src]
-
+        if len(os.listdir(src)) == 0:
+            _trace(logging.INFO, "Dossier vide, sauvé tel quel : " + src)
         fail: List[str] = []
         # Ici le try est indispensable : copytree continue après une erreur sur
         # un fichier, et ne les signale qu'à la fin, par une exception.
@@ -610,8 +618,11 @@ class ProfilElem(XMLMixin):
         # --- La sauvegarde de cet élément doit exister et contenir des fichiers.
         #     Sinon on ne touche à rien (l'ancienne version supprimait la cible
         #     AVANT de constater qu'il n'y avait rien à restaurer) -------------
+        if not os.path.isdir(source):
+            _trace(logging.WARNING, "Absent de l'archive, cible laissée intacte : " + cible)
+            return []
         fichiers = self._lister_fichiers(source)
-        if len(fichiers) == 0:
+        if len(fichiers) == 0 and self.mode != 1:
             _trace(logging.WARNING, "Rien à restaurer (absent de l'archive ou vide), "
                                     "cible laissée intacte : " + cible)
             return []
@@ -649,7 +660,7 @@ class ProfilElem(XMLMixin):
             return [] if self._restaurer_fichier(os.path.join(source, fichiers[0]), cible) else [cible]
 
         if self.mode == 1:
-            return self._restaurer_dossier(source, cible)
+            return self._restaurer_dossier(source, cible, len(fichiers) > 0)
 
         fail = []       # modes 2 et 3 : on remet les fichiers sauvegardés, sans rien supprimer
         for rel in fichiers:
@@ -659,8 +670,11 @@ class ProfilElem(XMLMixin):
 
 
     ############################################################################
-    def _restaurer_dossier(self, source: str, cible: str) -> List[str]:
-        """Mode 1 : le dossier cible redevient identique à la sauvegarde."""
+    def _restaurer_dossier(self, source: str, cible: str, avec_fichiers: bool) -> List[str]:
+        """ Mode 1 : le dossier cible redevient identique à la sauvegarde.
+            Si la sauvegarde ne contient aucun fichier (dossier vide, éventuellement avec
+            des sous-dossiers vides), on recrée ces dossiers mais on ne supprime rien.
+        """
         fail: List[str] = []
         # copytree continue après une erreur sur un fichier et ne les signale
         # qu'à la fin, par une exception : ce try est indispensable.
@@ -679,7 +693,7 @@ class ProfilElem(XMLMixin):
             return fail
 
         _trace(logging.INFO, "Restauré : " + cible)
-        if RESTAURATION_SUPPRIME_EXTRAS:
+        if RESTAURATION_SUPPRIME_EXTRAS and avec_fichiers:
             fail.extend(self._supprimer_extras(source, cible))
         return fail
 
