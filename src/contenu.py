@@ -783,7 +783,6 @@ else:
         if section.startswith("Install"):
             profile_path = profile.get(section, "Default").split('/')[-1]
             break
-    #print(profile_path)
 
     __FF = ProfilGroup("FireFox")
     __FF.add_elem("Roaming", 'APPDATA', os.path.join('Mozilla','Firefox', 'Profiles', profile_path), 1)

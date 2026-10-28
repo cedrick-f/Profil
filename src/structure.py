@@ -26,12 +26,10 @@ class XMLMixin:
         au format XML
     """
     def __init__(self, code: Optional['XMLMixin'] = None):
-        #print("__init__XMLMixin :", code)
         if code is None:
             code = self.__class__.__name__
-            #print(type(code))
         self._codeXML = code
-        #
+        
         super(XMLMixin, self).__init__()
 
 
@@ -56,14 +54,10 @@ class XMLMixin:
 
             Fonction récursive si l'attribut est un XMLMixin
         """
-        #print('to_xml', self._codeXML)
-
         ref = ET.Element(self._codeXML)
 
         def sauv(branche: ET.Element, val: Any, nom: Optional[str] = None):
-            #print("   ", nom, type(val))
             if type(val) == str:
-                #print('!!!', ("S_"+nom, escape(val)))
                 branche.set("S_"+nom, escape(val))
 
             elif type(val) == int:
@@ -259,9 +253,6 @@ if __name__ == "__main__":
     test = Test()
     test.attr1 = 2
     test.attr2 = "bin\ngo !"
-    #print(test.get_elem())
-    #print(vars(test))
-
 
     test.sauver_xml(os.path.join(base, "text.xml"))
 

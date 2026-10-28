@@ -76,7 +76,7 @@ class RestoreProcess(SaveProcess):
                  profil_config: ProfilConfig, 
                  fichier_config: str, 
                  password: str):
-        super().__init__(manager, profil_config, psw)
+        super().__init__(manager, profil_config, password)
         self.profil_config = profil_config
         self.fichier_config = fichier_config
         if DEBUG: print("RestoreProcess", self.profil_config)
