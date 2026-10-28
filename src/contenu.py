@@ -9,6 +9,7 @@
 #
 ################################################################################
 import glob
+import sys
 import shutil
 import time
 from typing import Dict
@@ -330,9 +331,9 @@ class ProfilElem(XMLMixin):
 
         elif self.mode == 4:    # Credential
             entries = list_credentials(self.path)
-            if DEBUG: print(entries)
-            for target in ...:
-                ...
+            # if DEBUG: print(entries)
+            # for target in ...:
+            #     ...
                 
         return fail
 

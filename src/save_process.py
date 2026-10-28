@@ -14,7 +14,7 @@ from queue import Queue
 from shutil import rmtree
 from tempfile import TemporaryDirectory
 from threading import Thread
-import logging, traceback
+import logging, traceback, sys
 
 # DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
 # DEBUG = False : lancé par le .exe          (cx_Freeze définit sys.frozen)
@@ -57,6 +57,9 @@ class SaveProcess(Thread):
             self.manager.to_zip(temp.name, 
                                 filename,
                                 self.password)
+            if DEBUG:                                  
+                self.manager.zip_to_xml(filename)      
+
         except Exception as e:
             logging.info('ERROR : '+ traceback.format_exc())
             if DEBUG: print('ERROR : '+ traceback.format_exc())
