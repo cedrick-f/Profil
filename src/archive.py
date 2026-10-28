@@ -44,10 +44,13 @@ def get_path_mesdocuments():
     """ Renvoie le chemin absolu du dossier personnel
          = "Mes documents" sous Windows
     """
+    # Si lancé depuis stp.py :
     if not getattr(sys, "frozen", False):
         dossier_test = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test")
         os.makedirs(dossier_test, exist_ok=True)
         return dossier_test
+        
+    # Si lancé depuis stp.exe :
     try:
         return shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL, None, 0)
     except:
