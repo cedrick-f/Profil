@@ -174,9 +174,6 @@ class Application(Frame):
 
 
 if __name__ == '__main__':
-    
-
-
     root = Tk()
     auto_restore = len(sys.argv) > 1 and sys.argv[1] == '-r'
     app = Application(root, auto_restore = auto_restore)

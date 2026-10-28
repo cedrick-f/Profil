@@ -69,7 +69,7 @@ lic = "GPL"
 if __name__ == '__main__':
     if sys.platform == "win32":
         from cx_Freeze import setup, Executable
-        cible = Executable( script = os.path.join(base_path,"application.py"),
+        cible = Executable( script = os.path.join(base_path,"stp.py"),
                             target_name="stp.exe",
                             base = "Win32GUI",
                             init_script = None,
