@@ -41,6 +41,9 @@ import save_process
 
 
 def get_path_mesdocuments():
+    """ Renvoie le chemin absolu du dossier personnel
+         = "Mes documents" sous Windows
+    """
     try:
         return shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL, None, 0)
     except:
