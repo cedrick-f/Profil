@@ -9,7 +9,7 @@
 #
 ################################################################################
 
-from os.path import join
+from os.path import join, splitext
 from queue import Queue
 from shutil import rmtree
 from tempfile import TemporaryDirectory
@@ -57,8 +57,10 @@ class SaveProcess(Thread):
             self.manager.to_zip(temp.name, 
                                 filename,
                                 self.password)
-            if DEBUG:                                  
-                self.manager.zip_to_xml(filename)      
+            if DEBUG:                                                   # <-- ajouté
+                dossier_dezip = join(self.manager.dossier, splitext(filename)[0])
+                rmtree(dossier_dezip, ignore_errors=True)               # repartir d'un dossier vide
+                self.manager.from_zip(filename, dossier_dezip)          # décompression de l'archive
 
         except Exception as e:
             logging.info('ERROR : '+ traceback.format_exc())

@@ -24,7 +24,6 @@ import subprocess
 from win32com.shell import shell, shellcon
 from genericpath import isfile
 from zipfile import BadZipfile
-import xml.etree.ElementTree as ET
 #import pyminizip
 
 # DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
@@ -235,27 +234,4 @@ class ArchiveManager:
             myzip.extractall(dest_path)
         return True
 
-    ############################################################################
-    def zip_to_xml(self, nom_zip: str) -> str:
-        """ (DEBUG) Écrit, à côté du .zip, un .xml qui liste le contenu réel de l'archive.
-
-        :param nom_zip: Nom du fichier .zip (dans self.dossier)
-        :return: Chemin du fichier .xml créé
-        """
-        chemin_zip = os.path.join(self.dossier, nom_zip)
-        chemin_xml = os.path.splitext(chemin_zip)[0] + ".xml"
-
-        racine = ET.Element("archive", nom=nom_zip)
-        with zipfile.ZipFile(chemin_zip, 'r') as myzip:
-            for info in myzip.infolist():
-                ET.SubElement(racine, "dossier" if info.is_dir() else "fichier",
-                              chemin=info.filename,
-                              taille=str(info.file_size),
-                              crc32="%08X" % info.CRC,
-                              date="%04d-%02d-%02d %02d:%02d:%02d" % info.date_time)
-        racine.set("nombre_fichiers", str(sum(1 for e in racine if e.tag == "fichier")))
-
-        ET.indent(racine)   # mise en forme lisible (Python 3.9 ou plus)
-        ET.ElementTree(racine).write(chemin_xml, encoding="utf-8", xml_declaration=True)
-        return chemin_xml
 
