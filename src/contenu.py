@@ -154,7 +154,10 @@ class ProfilGroup(XMLMixin):
     
     
     ############################################################################
-    def add_elem(self, name: Optional[str] = "", envpath: Optional[str] = "", path: Optional[str] = None, mode: int = 0):
+    def add_elem(self, name: Optional[str] = "", 
+                       envpath: Optional[str] = "", 
+                       path: Optional[str] = None, 
+                       mode: int = 0):
         if DEBUG: print("add_elem", name)
         self.lst_elem.append(ProfilElem(name, envpath, path, mode))
 
@@ -409,20 +412,24 @@ class ProfilElem(XMLMixin):
 PROFILS = ProfilConfig()
 
 if DEBUG:
+    dossier_test = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test")
+        
     # Un dossier pour faire des tests en toute sécurité
-    __TEST = ProfilGroup("Test")
-    __TEST.add_elem("f", 'USERPROFILE', os.path.join("test"), 2)
-    __TEST.add_elem("d", 'USERPROFILE', os.path.join(".dtest"), 1)
-    __TEST.add_elem("a", 'APPDATA', os.path.join("atest"), 1)
-    __TEST.add_elem("NextCloud", '', "Nextcloud_*", 4)
+    __TEST1 = ProfilGroup("Test1")  
+    __TEST1.add_elem(".home", 'USERPROFILE', os.path.join(".test0"), 1)
+    __TEST1.add_elem("home", 'USERPROFILE', os.path.join("test1"), 2)
+    __TEST1.add_elem("roaming", 'APPDATA', os.path.join("test2"), 1)
+    __TEST1.add_elem("local", 'LOCALAPPDATA', os.path.join("test3"), 1)
+    __TEST1.add_elem("NextCloud", '', "Nextcloud_*", 4)
 
-    __TEST2 = ProfilGroup("Test2")
-    __TEST2.add_elem("f", 'USERPROFILE', os.path.join(".test2"), 2)
-    __TEST2.add_elem("d", 'USERPROFILE', os.path.join(".dtest2"), 3)
-    __TEST2.add_elem("a", 'APPDATA', os.path.join("atest2"), 1)
+    __TEST2 = ProfilGroup("__Test2")
+    __TEST2.add_elem(".home", 'USERPROFILE', os.path.join(".__test0"), 2)
+    __TEST2.add_elem("home", 'USERPROFILE', os.path.join("__test1"), 3)
+    __TEST2.add_elem("roaming", 'APPDATA', os.path.join("__test2"), 1)
+    __TEST2.add_elem("autre", '', os.path.join(dossier_test, "__test3"), 1)
     
     
-    PROFILS.add_grp(__TEST)
+    PROFILS.add_grp(__TEST1)
     PROFILS.add_grp(__TEST2)
     
 else:
