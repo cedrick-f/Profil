@@ -22,6 +22,8 @@ import configparser
 # DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
 # DEBUG = False : lancé par le .exe          (cx_Freeze définit sys.frozen)
 DEBUG = not getattr(sys, "frozen", False)
+# Restauration d'un dossier (mode 1) : supprimer ce qui n'existe pas dans la sauvegarde ?
+RESTAURATION_SUPPRIME_EXTRAS = True
 
 ###############################################################################
 # Modules "application"
@@ -306,15 +308,29 @@ class ProfilElem(XMLMixin):
 
     ############################################################################
     @staticmethod
-    def _copier_fichier(f: str, dest: str) -> bool:
-        """Copie un fichier dans `dest` (sans sous-dossier). Renvoie True si réussi."""
+    def _dossier_base(chemin: str) -> str:
+        """Partie du chemin située avant le premier joker (* ? [)."""
+        base = []
+        for partie in Path(chemin).parts:
+            if glob.has_magic(partie):
+                break
+            base.append(partie)
+        return str(Path(*base)) if base else ""
+
+
+    ############################################################################
+    @staticmethod
+    def _copier_fichier(f: str, dest: str, rel: Optional[str] = None) -> bool:
+        """Copie le fichier `f` dans `dest`, sous le chemin relatif `rel`
+        (par défaut : à plat, sous son seul nom). Renvoie True si réussi."""
         if not os.access(f, os.R_OK):
             _trace(logging.ERROR, "Fichier non lisible : " + f)
             return False
 
-        # Les fichiers sont copiés à plat : deux fichiers de même nom
-        # s'écraseraient. On garde le premier, et on signale le second.
-        if os.path.exists(os.path.join(dest, os.path.basename(f))):
+        # Deux fichiers de même nom s'écraseraient : on garde le premier,
+        # et on signale le second.
+        cible = os.path.join(dest, rel if rel else os.path.basename(f))
+        if os.path.exists(cible):
             _trace(logging.WARNING, "Nom déjà présent, fichier non copié : " + f)
             return False
 
@@ -322,7 +338,8 @@ class ProfilElem(XMLMixin):
         # Windows : fichier verrouillé par un autre programme, disque plein,
         # chemin trop long...). On intercepte donc l'erreur, fichier par fichier.
         try:
-            shutil.copy2(f, dest)
+            os.makedirs(os.path.dirname(cible), exist_ok = True)
+            shutil.copy2(f, cible)
         except OSError as exc:
             _trace(logging.ERROR, "Copie impossible : %s (%s)" % (f, exc))
             return False
@@ -380,12 +397,20 @@ class ProfilElem(XMLMixin):
     ############################################################################
     def _sauver_filtre(self, src: str, dest: str, recursif: bool) -> List[str]:
         """Modes 2 et 3 : les fichiers qui correspondent à un filtre (*, ?, [..]).
-        `src` peut être un motif, ou un dossier (dont on prend les fichiers *.*)
+        `src` peut être un motif, un fichier précis, ou un dossier (dont on prend
+        alors tous les fichiers).
+          mode 2 : fichiers copiés à plat
+          mode 3 : sous-dossiers conservés (chemins relatifs au dossier de base)
         """
-        motif = src
         if os.path.isdir(src):
-            base = glob.escape(src)     # un nom de dossier peut contenir des [ ]
-            motif = os.path.join(base, "**", "*.*") if recursif else os.path.join(base, "*.*")
+            base = src
+            joker = "**" if recursif else ""
+            motif = os.path.join(glob.escape(src), joker, "*")  # "*" : y compris sans extension
+        else:
+            motif = src
+            base = self._dossier_base(src)
+            if not glob.has_magic(src):             # un fichier précis
+                base = os.path.dirname(src)
 
         fichiers = glob.glob(motif, recursive = recursif, include_hidden = True)
         if len(fichiers) == 0:
@@ -394,9 +419,10 @@ class ProfilElem(XMLMixin):
 
         fail: List[str] = []
         for f in fichiers:
-            if os.path.isdir(f):        # un dossier nommé "x.y" n'est pas un fichier
+            if os.path.isdir(f):
                 continue
-            if not self._copier_fichier(f, dest):
+            rel = os.path.relpath(f, base) if recursif else None
+            if not self._copier_fichier(f, dest, rel):
                 fail.append(f)
         return fail
 
@@ -493,57 +519,219 @@ class ProfilElem(XMLMixin):
                 
     #     return fail
 
+        ############################################################################
+    @staticmethod
+    def _lister_fichiers(dossier: str) -> List[str]:
+        """Chemins relatifs de tous les fichiers (cachés compris) d'un dossier.
+        Renvoie [] si le dossier n'existe pas."""
+        return [os.path.relpath(os.path.join(dp, nom), dossier)
+                for dp, _, noms in os.walk(dossier) for nom in noms]
+
+
+    ############################################################################
+    @staticmethod
+    def _dossier_cible_filtre(chemin: str, fichiers_sauves: List[str]) -> str:
+        """Modes 2 et 3 : dossier dans lequel remettre les fichiers sauvegardés."""
+        if os.path.isdir(chemin):
+            return chemin
+        if glob.has_magic(chemin):              # ex. ...\Desktop\*.lnk
+            return ProfilElem._dossier_base(chemin)
+        # Ni joker, ni dossier existant : un fichier précis (ex. .gitconfig),
+        # ou un dossier qui n'a pas encore été recréé ?
+        nom = os.path.basename(chemin).rstrip(".").lower()
+        if len(fichiers_sauves) == 1 and os.path.basename(fichiers_sauves[0]).lower() == nom:
+            return os.path.dirname(chemin)
+        return chemin
+
+
+    ############################################################################
+    @staticmethod
+    def _restaurer_fichier(f: str, cible: str) -> bool:
+        """Copie le fichier sauvegardé `f` vers le fichier `cible`. Renvoie True si réussi."""
+        # Même raison que pour la sauvegarde : seule la tentative révèle un
+        # fichier verrouillé, un disque plein, un chemin trop long...
+        try:
+            os.makedirs(os.path.dirname(cible), exist_ok = True)
+            shutil.copy2(f, cible)
+        except OSError as exc:
+            _trace(logging.ERROR, "Restauration impossible : %s (%s)" % (cible, exc))
+            return False
+        _trace(logging.INFO, "Restauré : " + cible)
+        return True
+
+
+    ############################################################################
+    @staticmethod
+    def _supprimer_extras(source: str, cible: str) -> List[str]:
+        """Supprime de `cible` les fichiers (et dossiers devenus vides) qui n'existent
+        pas dans `source`. À n'appeler QU'APRÈS une copie entièrement réussie."""
+        fail: List[str] = []
+        # topdown=False : on traite les sous-dossiers avant leur parent.
+        # os.walk ne descend pas dans les liens / jonctions : rien n'y est supprimé.
+        for dp, _, noms in os.walk(cible, topdown = False):
+            ref = os.path.normpath(os.path.join(source, os.path.relpath(dp, cible)))
+            for nom in noms:
+                if not os.path.exists(os.path.join(ref, nom)):
+                    f = os.path.join(dp, nom)
+                    try:
+                        os.remove(f)
+                        _trace(logging.INFO, "Supprimé (absent de la sauvegarde) : " + f)
+                    except OSError as exc:
+                        fail.append(f)
+                        _trace(logging.ERROR, "Suppression impossible : %s (%s)" % (f, exc))
+            if dp != cible and not os.path.isdir(ref):
+                try:
+                    os.rmdir(dp)        # échoue (normalement) si le dossier n'est pas vide
+                except OSError:
+                    pass
+        return fail
 
 
     ############################################################################
     def restaurer(self, source: str) -> List[str]:
         """ Restaure les fichiers du dossier source vers le dossier d'origine
-            Renvoie la liste des fichiers qui n'ont pas été copiés
+
+            Précautions : rien n'est supprimé si la sauvegarde de cet élément est
+            absente ou vide, ni si la cible sort du dossier désigné par la variable
+            d'environnement ; les fichiers en trop ne sont supprimés qu'une fois
+            tous les fichiers restaurés sans erreur.
+
+            Renvoie la liste des fichiers qui n'ont pas été restaurés
         """
-        fail: List[str] = []
-#         print("restaurer", source, self.path)
-        
-        path = self.getFullPath()
-        logging.info("Restore process : " + source + " --> "+ path)
-        try:
-            if os.path.exists(path):
-                shutil.rmtree(path, True)
-                time.sleep(0.1) # Pour éviter les erreurs d'accès refusé par copytree
+        if self.mode == 4:      # Credential (en travaux)
+            fail: List[str] = []
+            # for target in ...:
+            #     ...
+            return fail
 
-            if self.mode == 0:      # Tous les fichiers du dossier
-                shutil.copy2(source, path)
+        cible = self.getFullPath()
+        _trace(logging.INFO, "Restaurer '%s' : %s (mode %d)" % (self.name, cible, self.mode))
 
-            elif self.mode == 1:    # Tous les fichiers du dossier et des sous dossiers
-                shutil.copytree(source, path)
+        # --- La sauvegarde de cet élément doit exister et contenir des fichiers.
+        #     Sinon on ne touche à rien (l'ancienne version supprimait la cible
+        #     AVANT de constater qu'il n'y avait rien à restaurer) -------------
+        fichiers = self._lister_fichiers(source)
+        if len(fichiers) == 0:
+            _trace(logging.WARNING, "Rien à restaurer (absent de l'archive ou vide), "
+                                    "cible laissée intacte : " + cible)
+            return []
 
-            elif self.mode == 2:    # Tous les fichiers du dossier, filtrés
-                p = Path(source)
-                for f in p.glob('**/*.*'):
-#                     print("???3", f)
-#                 for f in glob.glob(os.path.join(source, "**")):
-#                     print(f, self.path)
-                    
-#                     print(f, glob.glob(os.path.join(source, "**")))
-                    shutil.copy2(f, path.split("*")[0])
-                    logging.info("    File Restore SUCCESS : "+str(f))
+        # --- La cible doit se trouver DANS le dossier de la variable d'environnement.
+        #     La configuration vient de l'archive (config.xml) : on ne lui fait
+        #     pas une confiance aveugle (chemin absolu, "..", etc.) ------------
+        base = os.getenv(self.env) if self.env else None
+        if not base or not os.path.isabs(cible):
+            _trace(logging.ERROR, "Pas de variable d'environnement valide, restauration refusée : " + cible)
+            return [cible]
 
-            elif self.mode == 3:    # Tous les fichiers du dossier et des sous dossiers, filtrés
-                for f in glob.glob(source, recursive = True):
-                    shutil.copy2(f, path)
+        if self.mode == 0:
+            dossier = os.path.dirname(cible)
+        elif self.mode == 1:
+            dossier = cible
+        elif self.mode in (2, 3):
+            dossier = self._dossier_cible_filtre(cible, fichiers)
+        else:
+            _trace(logging.ERROR, "Mode de copie inconnu : %s" % self.mode)
+            return [cible]
 
-            elif self.mode == 4:    # Credential
-                for target in ...:
-                    ...
+        if not _est_dans(dossier, base):
+            _trace(logging.ERROR, "Cible hors du dossier autorisé (%s), restauration refusée : %s" % (base, cible))
+            return [cible]
+        if self.mode == 1 and _est_dans(base, dossier):
+            _trace(logging.ERROR, "Remplacer tout le dossier %s est refusé : %s" % (base, cible))
+            return [cible]
 
-        except Exception as exc:
-            logging.info('ERROR : '+ traceback.format_exc())
-#             errors = exc.args[0]
-#             for error in errors:
-#                 src, dst, msg = error
-#                 fail.append(src)
-#                 logging.error("Restore ERROR : "+src)
-                
+        # --- Restauration -----------------------------------------------------
+        if self.mode == 0:
+            if len(fichiers) != 1:
+                _trace(logging.ERROR, "Mode 0 : un seul fichier attendu dans la sauvegarde, %d trouvés" % len(fichiers))
+                return [cible]
+            return [] if self._restaurer_fichier(os.path.join(source, fichiers[0]), cible) else [cible]
+
+        if self.mode == 1:
+            return self._restaurer_dossier(source, cible)
+
+        fail = []       # modes 2 et 3 : on remet les fichiers sauvegardés, sans rien supprimer
+        for rel in fichiers:
+            if not self._restaurer_fichier(os.path.join(source, rel), os.path.join(dossier, rel)):
+                fail.append(os.path.join(dossier, rel))
         return fail
+
+
+    ############################################################################
+    def _restaurer_dossier(self, source: str, cible: str) -> List[str]:
+        """Mode 1 : le dossier cible redevient identique à la sauvegarde."""
+        fail: List[str] = []
+        # copytree continue après une erreur sur un fichier et ne les signale
+        # qu'à la fin, par une exception : ce try est indispensable.
+        try:
+            shutil.copytree(source, cible, dirs_exist_ok = True)
+        except shutil.Error as exc:
+            for erreur in exc.args[0]:
+                fail.append(erreur[1])
+                _trace(logging.ERROR, "Restauration impossible : %s (%s)" % (erreur[1], erreur[2]))
+        except OSError as exc:
+            fail.append(cible)
+            _trace(logging.ERROR, "Restauration impossible : %s (%s)" % (cible, exc))
+
+        if len(fail) > 0:
+            _trace(logging.WARNING, "Erreurs de copie : les fichiers en trop ne sont pas supprimés dans " + cible)
+            return fail
+
+        _trace(logging.INFO, "Restauré : " + cible)
+        if RESTAURATION_SUPPRIME_EXTRAS:
+            fail.extend(self._supprimer_extras(source, cible))
+        return fail
+
+#     ############################################################################
+#     def restaurer(self, source: str) -> List[str]:
+#         """ Restaure les fichiers du dossier source vers le dossier d'origine
+#             Renvoie la liste des fichiers qui n'ont pas été copiés
+#         """
+#         fail: List[str] = []
+# #         print("restaurer", source, self.path)
+        
+#         path = self.getFullPath()
+#         logging.info("Restore process : " + source + " --> "+ path)
+#         try:
+#             if os.path.exists(path):
+#                 shutil.rmtree(path, True)
+#                 time.sleep(0.1) # Pour éviter les erreurs d'accès refusé par copytree
+
+#             if self.mode == 0:      # Tous les fichiers du dossier
+#                 shutil.copy2(source, path)
+
+#             elif self.mode == 1:    # Tous les fichiers du dossier et des sous dossiers
+#                 shutil.copytree(source, path)
+
+#             elif self.mode == 2:    # Tous les fichiers du dossier, filtrés
+#                 p = Path(source)
+#                 for f in p.glob('**/*.*'):
+# #                     print("???3", f)
+# #                 for f in glob.glob(os.path.join(source, "**")):
+# #                     print(f, self.path)
+                    
+# #                     print(f, glob.glob(os.path.join(source, "**")))
+#                     shutil.copy2(f, path.split("*")[0])
+#                     logging.info("    File Restore SUCCESS : "+str(f))
+
+#             elif self.mode == 3:    # Tous les fichiers du dossier et des sous dossiers, filtrés
+#                 for f in glob.glob(source, recursive = True):
+#                     shutil.copy2(f, path)
+
+#             elif self.mode == 4:    # Credential
+#                 for target in ...:
+#                     ...
+
+#         except Exception as exc:
+#             logging.info('ERROR : '+ traceback.format_exc())
+# #             errors = exc.args[0]
+# #             for error in errors:
+# #                 src, dst, msg = error
+# #                 fail.append(src)
+# #                 logging.error("Restore ERROR : "+src)
+                
+#         return fail
 
 
 
