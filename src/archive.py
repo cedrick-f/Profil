@@ -217,7 +217,7 @@ class ArchiveManager:
 #             for ff in glob.iglob(os.path.join(src_path, "**"), recursive=True):
 #                 print("???4", ff)
             
-            for f in p.glob('*'):   
+            for f in p.rglob('*'):   
                 if DEBUG: print(f) 
             #for f in glob.iglob(os.path.join(src_path, "**"), recursive=True):
                 myzip.write(f, os.path.relpath(f, start=src_path))
