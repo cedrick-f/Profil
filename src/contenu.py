@@ -18,17 +18,21 @@ from os import path
 from pathlib import Path
 import logging, traceback
 import configparser
+import base64, fnmatch, json
 
 # DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
 # DEBUG = False : lancé par le .exe          (cx_Freeze définit sys.frozen)
 DEBUG = not getattr(sys, "frozen", False)
 # Restauration d'un dossier (mode 1) : supprimer ce qui n'existe pas dans la sauvegarde ?
 RESTAURATION_SUPPRIME_EXTRAS = True
+# Mode 4 (credentials Windows)
+CREDENTIALS_FILE = "credentials.json"       # fichier créé dans le dossier de l'élément
+CREDENTIAL_PREFIXE_TEST = "STP_TEST_"       # en DEBUG, seules les credentials de ce préfixe sont touchées
 
 ###############################################################################
 # Modules "application"
 from structure import *
-from windows_credential_manager import list_credentials
+from windows_credential_manager import list_credentials, write_credential, CRED_PERSIST_LOCAL_MACHINE
 
 
 
@@ -273,13 +277,6 @@ class ProfilElem(XMLMixin):
         :param dest: Dossier de destination (doit exister)
         :return: Renvoie la liste des fichiers qui n'ont pas été copiés
         """
-        if self.mode == 4:      # Credential (en travaux)
-            fail: List[str] = []
-            entries = list_credentials(self.path)
-            # if DEBUG: print(entries)
-            # for target in ...:
-            #     ...
-            return fail
 
         src = self.getFullPath()
         _trace(logging.INFO, "Sauver '%s' : %s (mode %d)" % (self.name, src, self.mode))
@@ -288,6 +285,9 @@ class ProfilElem(XMLMixin):
         if not os.path.isdir(dest) or not os.access(dest, os.W_OK):
             _trace(logging.ERROR, "Destination inaccessible en écriture : " + dest)
             return [src]
+
+        if self.mode == 4:      # Credential : `path` est un filtre sur le nom, pas un chemin
+            return self._sauver_credentials(dest)
 
         # --- Source : jamais de chemin relatif (il serait lu depuis le dossier
         #     courant), par ex. si la variable d'environnement n'existe pas ----
@@ -346,6 +346,95 @@ class ProfilElem(XMLMixin):
 
         _trace(logging.INFO, "Sauvé : " + f)
         return True
+
+    ############################################################################
+    def _filtre_credentials_autorise(self) -> bool:
+        """Mode 4 : en mode DEBUG, seules les credentials de test peuvent être lues/écrites.
+        Le Gestionnaire d'informations d'identification est celui du VRAI compte Windows :
+        la redirection vers test/ des variables d'environnement ne le concerne pas."""
+        if DEBUG and not self.path.upper().startswith(CREDENTIAL_PREFIXE_TEST):
+            _trace(logging.ERROR, "Mode DEBUG : seules les credentials '%s*' sont autorisées "
+                                  "(filtre demandé : '%s')" % (CREDENTIAL_PREFIXE_TEST, self.path))
+            return False
+        return True
+
+
+    ############################################################################
+    def _sauver_credentials(self, dest: str) -> List[str]:
+        """Mode 4 : sauvegarde les informations d'identité génériques Windows dont le nom
+        correspond au filtre `self.path` (ex. "Nextcloud_*").
+        Elles sont écrites dans dest/credentials.json (contenu brut codé en base64).
+        ATTENTION : ce fichier contient des secrets. Ne JAMAIS les écrire dans le log."""
+        if not self._filtre_credentials_autorise():
+            return [self.path]
+
+        try:
+            entrees = list_credentials(self.path)
+        except OSError as exc:
+            _trace(logging.ERROR, "Lecture des credentials impossible (%s) : %s" % (self.path, exc))
+            return [self.path]
+        if len(entrees) == 0:
+            _trace(logging.WARNING, "Aucune credential ne correspond à : " + self.path)
+            return []
+
+        donnees = {"version": 1,
+                   "credentials": [{"target_name": e.target_name,
+                                    "username": e.username,
+                                    "comment": e.comment,
+                                    "persist": e.persist,
+                                    "blob": base64.b64encode(e.blob).decode("ascii")}
+                                   for e in entrees]}
+        try:
+            with open(os.path.join(dest, CREDENTIALS_FILE), "w", encoding = "utf-8") as f:
+                json.dump(donnees, f, indent = 2)
+        except OSError as exc:
+            _trace(logging.ERROR, "Écriture impossible (%s) : %s" % (CREDENTIALS_FILE, exc))
+            return [self.path]
+
+        for e in entrees:
+            _trace(logging.INFO, "Sauvé (credential) : " + e.target_name)    # le nom seulement
+        return []
+
+
+    ############################################################################
+    def _restaurer_credentials(self, source: str) -> List[str]:
+        """Mode 4 : restaure les credentials sauvegardées (celles qui existent déjà sont
+        remplacées ; les autres ne sont pas touchées, rien n'est supprimé).
+        Une credential dont le nom ne correspond pas au filtre de l'élément est refusée."""
+        if not self._filtre_credentials_autorise():
+            return [self.path]
+
+        fichier = os.path.join(source, CREDENTIALS_FILE)
+        if not os.path.isfile(fichier):
+            _trace(logging.WARNING, "Absent de l'archive, credentials laissées intactes : " + self.path)
+            return []
+        try:
+            with open(fichier, encoding = "utf-8") as f:
+                entrees = json.load(f)["credentials"]
+            if not isinstance(entrees, list):
+                raise TypeError("liste attendue")
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            _trace(logging.ERROR, "Fichier %s illisible : %s" % (CREDENTIALS_FILE, exc))
+            return [self.path]
+
+        fail: List[str] = []
+        for e in entrees:
+            cible = "?"
+            try:
+                cible = e["target_name"]
+                if not fnmatch.fnmatchcase(cible.lower(), self.path.lower()):
+                    raise ValueError("nom hors du filtre '%s'" % self.path)
+                persist = e.get("persist", CRED_PERSIST_LOCAL_MACHINE)
+                if persist not in (1, 2, 3):
+                    persist = CRED_PERSIST_LOCAL_MACHINE
+                write_credential(cible, e.get("username", ""), "", e.get("comment", ""),
+                                 persist, blob = base64.b64decode(e.get("blob", "")))
+            except (KeyError, TypeError, AttributeError, ValueError, OSError) as exc:
+                fail.append(str(cible))
+                _trace(logging.ERROR, "Restauration impossible (credential %s) : %s" % (cible, exc))
+                continue
+            _trace(logging.INFO, "Restauré (credential) : " + cible)
+        return fail
 
 
     ############################################################################
@@ -434,100 +523,8 @@ class ProfilElem(XMLMixin):
                 fail.append(f)
         return fail
 
-    # ############################################################################
-    # def sauver(self, dest: str) -> List[str]:
-    #     """Copie les fichiers du contenu vers le dossier de destination.
 
-    #     :param dest: Dossier de destination
-    #     :return: Renvoie la liste des fichiers qui n'ont pas été copiés
-    #     :raises:
-    #         FileExistsError: si dest existe déjà
-    #     """
-    #     fail: List[str] = []
-        
-    #     path = self.getFullPath()
-    #     if DEBUG: print("    Sauver Elem", self.path, "("+path+") mode", self.mode)
-        
-    #     if self.mode == 0:
-    #         shutil.copy2(path, dest)
-
-
-    #     elif self.mode == 1:
-    #         try:
-    #             if not os.access(path, os.W_OK):
-    #                 fail.append(path)
-    #                 logging.error("    Save ERROR (access): "+ path)
-    #                 if DEBUG: print("    Save ERROR (access):"+ path)
-    #                 return fail
-    #             shutil.rmtree(dest)
-    #             shutil.copytree(path, dest)    # py3.8 : , dirs_exist_ok = True)
-    #             logging.info('  Saved 1 :'+ path)
-    #             if DEBUG: print('    > Saved 1 :'+ path)
-    #         except shutil.Error as exc:
-    #             errors = exc.args[0]
-    #             for error in errors:
-    #                 src, dst, msg = error
-    #                 fail.append(src)
-    #                 logging.error("    Save ERROR :"+ src+" "+ msg)
-    #                 if DEBUG: print("    Save ERROR :"+ src, msg)
-
-
-    #     elif self.mode == 2:
-    #         if os.path.isdir(path):
-    #             path = os.path.join(path, "*.*")
-    #             if DEBUG: print("    >>", path)
-    #         for f in glob.glob(path, include_hidden = True):
-    #             if DEBUG: print("    +++", f)
-    #             # Astuce pour copier les fichier "cachés"
-    #             if False:#os.path.basename(f).startswith('.'):
-    #                 #cwd = os.getcwd()
-    #                 if DEBUG: print("    !!!!", f)
-    #                 e = shutil.copyfile(f, os.path.join(dest, "_"+os.path.basename(f)))
-    #                 if DEBUG: print("    Err:",e)
-    #                 # p = Path(dest)
-    #                 # for ff in p.glob('**/*.*'):
-    #                 #     print("???1", ff)
-    #                 # os.chdir(dest)
-                    
-    #                 os.rename(os.path.join(dest,"_"+os.path.basename(f)), 
-    #                           os.path.join(dest, os.path.basename(f)))
-    #             #     os.chdir(cwd)
-    #             #     for ff in p.glob('**/*.*'):
-    #             #         print("???2", ff)
-    #             # pp, ff = os.path.split(f)
-    #             # fff, eee = os.path.splitext(ff)
-    #             # print(pp, " - ", fff, " - ", eee)
-    #             # if eee == '':
-    #             #     print("   xxx-", fff)
-    #             #     os.rename(f, os.path.join(pp, "_"+fff))
-    #             #     shutil.copy2(os.path.join(pp, "_"+fff), dest)
-    #             #     os.rename(os.path.join(dest, "_"+fff), os.path.join(dest, fff))
-    #             else:
-    #                 if DEBUG: print("    !!!!", f)
-    #                 shutil.copy2(f, dest)
-                
-    #             logging.info('    Saved 2 :'+ f)
-    #             if DEBUG: print('    > Saved 2 :'+ f)
-            
-                
-    #     elif self.mode == 3:
-    #         if os.path.isdir(path):
-    #             path = os.path.join(path, "**", "*.*")
-    #             if DEBUG: print("    >>", path)
-    #         for f in glob.glob(path, recursive = True, include_hidden = True):
-    #             shutil.copy2(f, dest)
-    #             logging.info('    Saved 3 :'+ f)
-    #             if DEBUG: print('    > Saved 3 :'+ f)
-
-    #     elif self.mode == 4:    # Credential
-    #         entries = list_credentials(self.path)
-    #         # if DEBUG: print(entries)
-    #         # for target in ...:
-    #         #     ...
-                
-    #     return fail
-
-        ############################################################################
+    ############################################################################
     @staticmethod
     def _lister_fichiers(dossier: str) -> List[str]:
         """Chemins relatifs de tous les fichiers (cachés compris) d'un dossier.
@@ -606,11 +603,8 @@ class ProfilElem(XMLMixin):
 
             Renvoie la liste des fichiers qui n'ont pas été restaurés
         """
-        if self.mode == 4:      # Credential (en travaux)
-            fail: List[str] = []
-            # for target in ...:
-            #     ...
-            return fail
+        if self.mode == 4:      # Credential
+            return self._restaurer_credentials(source)
 
         cible = self.getFullPath()
         _trace(logging.INFO, "Restaurer '%s' : %s (mode %d)" % (self.name, cible, self.mode))
@@ -697,59 +691,6 @@ class ProfilElem(XMLMixin):
             fail.extend(self._supprimer_extras(source, cible))
         return fail
 
-#     ############################################################################
-#     def restaurer(self, source: str) -> List[str]:
-#         """ Restaure les fichiers du dossier source vers le dossier d'origine
-#             Renvoie la liste des fichiers qui n'ont pas été copiés
-#         """
-#         fail: List[str] = []
-# #         print("restaurer", source, self.path)
-        
-#         path = self.getFullPath()
-#         logging.info("Restore process : " + source + " --> "+ path)
-#         try:
-#             if os.path.exists(path):
-#                 shutil.rmtree(path, True)
-#                 time.sleep(0.1) # Pour éviter les erreurs d'accès refusé par copytree
-
-#             if self.mode == 0:      # Tous les fichiers du dossier
-#                 shutil.copy2(source, path)
-
-#             elif self.mode == 1:    # Tous les fichiers du dossier et des sous dossiers
-#                 shutil.copytree(source, path)
-
-#             elif self.mode == 2:    # Tous les fichiers du dossier, filtrés
-#                 p = Path(source)
-#                 for f in p.glob('**/*.*'):
-# #                     print("???3", f)
-# #                 for f in glob.glob(os.path.join(source, "**")):
-# #                     print(f, self.path)
-                    
-# #                     print(f, glob.glob(os.path.join(source, "**")))
-#                     shutil.copy2(f, path.split("*")[0])
-#                     logging.info("    File Restore SUCCESS : "+str(f))
-
-#             elif self.mode == 3:    # Tous les fichiers du dossier et des sous dossiers, filtrés
-#                 for f in glob.glob(source, recursive = True):
-#                     shutil.copy2(f, path)
-
-#             elif self.mode == 4:    # Credential
-#                 for target in ...:
-#                     ...
-
-#         except Exception as exc:
-#             logging.info('ERROR : '+ traceback.format_exc())
-# #             errors = exc.args[0]
-# #             for error in errors:
-# #                 src, dst, msg = error
-# #                 fail.append(src)
-# #                 logging.error("Restore ERROR : "+src)
-                
-#         return fail
-
-
-
-
 
 
 ################################################################################
@@ -775,7 +716,7 @@ if DEBUG:
     __TEST1.add_elem("home", 'USERPROFILE', os.path.join("test1"), 2)
     __TEST1.add_elem("roaming", 'APPDATA', os.path.join("test2"), 1)
     __TEST1.add_elem("local", 'LOCALAPPDATA', os.path.join("test3"), 1)
-    __TEST1.add_elem("NextCloud", '', "Nextcloud_*", 4)
+    __TEST1.add_elem("credentials", '', "STP_TEST_*", 4)
 
     __TEST2 = ProfilGroup("__Test2")
     __TEST2.add_elem(".home", 'USERPROFILE', os.path.join(".__test0"), 2)

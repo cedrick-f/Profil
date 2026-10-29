@@ -75,6 +75,7 @@ class CredentialEntry:
     password:    str
     comment:     str = ""
     persist:     int = CRED_PERSIST_LOCAL_MACHINE
+    blob:        bytes = b""        # contenu brut exact (pour sauvegarde/restauration fidèles)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -87,6 +88,7 @@ def write_credential(
     password: str,
     comment: str = "",
     persist: int = CRED_PERSIST_LOCAL_MACHINE,
+    blob: Optional[bytes] = None,
 ) -> None:
     """
     Crée ou met à jour une information d'identité générique dans le
@@ -98,11 +100,12 @@ def write_credential(
         password    : Mot de passe (sera stocké chiffré par Windows)
         comment     : Commentaire optionnel visible dans le gestionnaire
         persist     : CRED_PERSIST_LOCAL_MACHINE (2) ou CRED_PERSIST_ENTERPRISE (3)
-
+        blob        : Si fourni, octets écrits tels quels à la place de `password`
+                      (restauration exacte, y compris des données non textuelles)
     Raises:
         OSError: En cas d'échec de l'API Windows
     """
-    password_bytes = password.encode("utf-16-le")
+    password_bytes = blob if blob is not None else password.encode("utf-16-le")
     blob = (ctypes.c_byte * len(password_bytes))(*password_bytes)
 
     cred = CREDENTIAL()
@@ -256,6 +259,7 @@ def list_credentials(filter_prefix: Optional[str] = None) -> list[CredentialEntr
                 password    = password,
                 comment     = cred.Comment    or "",
                 persist     = cred.Persist,
+                blob        = raw if blob_size > 0 else b"",
             ))
     finally:
         _advapi32.CredFree(creds_ptr)
