@@ -95,18 +95,15 @@ class Application(Frame):
         self.statusWidget.pack(padx = 5, pady = 5)
 
         f = Frame(self)
+        f.columnconfigure((0, 1), weight = 1, uniform = "actions")   # 2 colonnes de même largeur
+        f.rowconfigure(0, weight = 1)                                # et de même hauteur
+
         self.actionSave = ActionWidget(f, self.handle_save, 'save', self.profilConfigSave)
-#         self.actions.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
-        self.actionSave.pack(side = tkinter.LEFT, 
-                             fill = tkinter.BOTH,
-                             expand = 1,
-                             padx = 5, pady = 5)
+        self.actionSave.grid(row = 0, column = 0, sticky = "nsew", padx = 5, pady = 5)
 
         self.actionRestore = ActionWidget(f, self.handle_restore, 'restore', self.profilConfigRest)
-        self.actionRestore.pack(side = tkinter.LEFT, 
-                                fill = tkinter.BOTH,
-                                expand = 1,
-                                padx = 5, pady = 5)
+        self.actionRestore.grid(row = 0, column = 1, sticky = "nsew", padx = 5, pady = 5)
+
         f.pack(fill = tkinter.BOTH, expand = 1)
         
         self.process = None

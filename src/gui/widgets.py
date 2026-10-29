@@ -32,11 +32,12 @@ class ActionWidget(Frame):
         self.fcn = fcn
         
         self.btn = Button(self, text=msg.get(msg_code), 
-                               command=self.fcn)
+                                command = self.fcn, 
+                                font = ("Arial", 12, "bold"))
         self.btn.pack()
         
         self.config = ConfigWidget(self, profilConfig)
-        self.config.pack()
+        self.config.pack(fill = "x")
 
     def handle_click(self):
         self.fcn()
@@ -82,7 +83,8 @@ class PasswordWidget(Frame):
 
 #################################################################################################
 class ConfigWidget(Frame):
-    """Interface pour configurer quels éléments seront sauvegardés."""
+    """ Interface pour configurer quels éléments seront sauvegardés.
+    """
 
     def __init__(self, parent: Frame, profilConfig: ProfilConfig):
         super().__init__(parent)
