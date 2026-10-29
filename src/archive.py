@@ -193,33 +193,50 @@ class ArchiveManager:
     def to_zip(self, src_path: str, dest_zip: str, pwd = None) -> bool:
         """Archive un dossier dans un fichier .zip de destination.
 
+        L'archive est d'abord écrite dans un fichier temporaire (.zip.tmp), vérifiée,
+        puis renommée : en cas d'arrêt en cours d'écriture, l'éventuelle archive
+        précédente du même nom reste intacte.
+
         :param src_path: Chemin complet vers le répertoire à archiver
         :param dest_zip: Nom du fichier de destination
         """
         zipPath = os.path.join(self.dossier, dest_zip)
+        tmpPath = zipPath + ".tmp"      # l'extension .tmp est ignorée par get_most_recent_zip / get_all_zip
         if DEBUG: print("to_zip", pwd)
-        # if False:#pwd is not None:
-        #     lst = Path(src_path).glob('**/*.*')
-        #     lst = [os.path.relpath(f, start=src_path) for f in lst]
-        #     pyminizip.compress_multiple(lst, 
-        #                                 [],
-        #                                 zipPath, pwd, 5)
-            
-        #     return
         if DEBUG: print("     ", zipPath)
-        with zipfile.ZipFile(zipPath, 'w') as myzip:
-            if pwd is not None:
-                myzip.setpassword(pwd)
-            p = Path(src_path)
-#             for ff in p.glob('**/*.*'):
-#                 print("???3", ff)
-#             for ff in glob.iglob(os.path.join(src_path, "**"), recursive=True):
-#                 print("???4", ff)
-            
-            for f in p.rglob('*'):   
-                if DEBUG: print(f) 
-            #for f in glob.iglob(os.path.join(src_path, "**"), recursive=True):
-                myzip.write(f, os.path.relpath(f, start=src_path))
+
+        # Fichiers temporaires laissés par un arrêt brutal précédent
+        for ancien in glob.glob(os.path.join(glob.escape(self.dossier), ArchiveManager.BASENAME + "*.zip.tmp")):
+            try:
+                os.remove(ancien)
+            except OSError:
+                pass
+
+        try:
+            with open(tmpPath, 'wb') as fichier:
+                with zipfile.ZipFile(fichier, 'w') as myzip:
+                    if pwd is not None:
+                        myzip.setpassword(pwd)
+                    p = Path(src_path)
+                    for f in p.rglob('*'):
+                        if DEBUG: print(f)
+                        myzip.write(f, os.path.relpath(f, start=src_path))
+                fichier.flush()
+                os.fsync(fichier.fileno())      # les données sont vraiment sur le disque
+
+            # Relecture complète (contrôle des CRC) AVANT de remplacer l'ancienne archive
+            with zipfile.ZipFile(tmpPath) as myzip:
+                mauvais = myzip.testzip()
+            if mauvais is not None:
+                raise BadZipfile("Archive corrompue, fichier : " + mauvais)
+
+            os.replace(tmpPath, zipPath)        # remplacement en une seule opération
+        finally:
+            if os.path.exists(tmpPath):         # échec : pas de fichier temporaire abandonné
+                try:
+                    os.remove(tmpPath)
+                except OSError:
+                    pass
         return True
 
 
