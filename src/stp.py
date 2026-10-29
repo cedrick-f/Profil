@@ -86,13 +86,13 @@ class Application(Frame):
         # Tous les Widgets ...
         self.workplace = WorkplaceWidget(self, self.manager, self.update_profileR)
 #         self.workplace.pack(fill=tkinter.BOTH, expand=1, padx = 5, pady = 5)
-        self.workplace.pack(padx = 5, pady = 5)
+        self.workplace.pack(padx = 5, pady = 5, fill = tkinter.X)
         
         self.passwordWidget = PasswordWidget(self)
-        self.passwordWidget.pack(padx = 5, pady = 5)
+        self.passwordWidget.pack(padx = 5, pady = 5, fill = tkinter.X)
 
         self.statusWidget = StatusWidget(self)
-        self.statusWidget.pack(padx = 5, pady = 5)
+        self.statusWidget.pack(padx = 5, pady = 5, fill = tkinter.X)
 
         f = Frame(self)
         f.columnconfigure((0, 1), weight = 1, uniform = "actions")   # 2 colonnes de même largeur

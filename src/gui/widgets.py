@@ -55,7 +55,7 @@ class StatusWidget(Frame):
         self.lst_elem: List[ProfilElem] = []
         self.status.grid(row=3, column=0, columnspan = 2, 
                          sticky = "nsew")
-        
+        self.columnconfigure(0, weight = 1)     # le texte est centré sur toute la largeur
 
     def update_status(self, text: str):
         self.status['text'] = text
@@ -74,6 +74,7 @@ class PasswordWidget(Frame):
         self.pswd_widget = Entry(self, show="*", width = 15, textvariable = self.psw)
         self.pswd_widget.grid(row=1, column=0, columnspan = 2, 
                               sticky = "nsew")
+        self.columnconfigure(0, weight = 1)     # le champ s'étire avec la fenêtre
 
     def get_psw(self):
         return self.psw.get()
