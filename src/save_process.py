@@ -15,6 +15,7 @@ from shutil import rmtree
 from tempfile import TemporaryDirectory
 from threading import Thread
 import logging, traceback, sys
+from typing import Optional
 
 # DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
 # DEBUG = False : lancé par le .exe          (cx_Freeze définit sys.frozen)
@@ -43,6 +44,8 @@ class SaveProcess(Thread):
         self.manager = manager
         self.password = password
         self.queue = Queue()
+        self.erreur: Optional[str] = None       # message d'erreur à afficher à l'utilisateur
+
 
     def run(self):
         temp = TemporaryDirectory()
@@ -54,14 +57,17 @@ class SaveProcess(Thread):
             self.profil_config.sauver(temp.name)
             self.profil_config.sauver_xml(join(temp.name, CONFIG_FILE))
             self.queue.put(msg.get('unzipping'))
-            self.manager.to_zip(temp.name, 
-                                filename,
-                                self.password)
-            if DEBUG:                                                   # <-- ajouté
-                dossier_dezip = join(self.manager.dossier, splitext(filename)[0])
-                rmtree(dossier_dezip, ignore_errors=True)               # repartir d'un dossier vide
-                self.manager.from_zip(filename, dossier_dezip)          # décompression de l'archive
-
+            if self.manager.to_zip(temp.name, 
+                                   filename,
+                                   self.password):
+                if DEBUG:
+                    dossier_dezip = join(self.manager.dossier, splitext(filename)[0])
+                    rmtree(dossier_dezip, ignore_errors=True)           # repartir d'un dossier vide
+                    self.manager.from_zip(filename, dossier_dezip)      # décompression de l'archive
+            else:
+                self.erreur = msg.get('zip_corrompu')
+                self.queue.put(self.erreur)
+                
         except Exception as e:
             logging.info('ERROR : '+ traceback.format_exc())
             if DEBUG: print('ERROR : '+ traceback.format_exc())

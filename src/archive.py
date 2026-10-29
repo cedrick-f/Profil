@@ -199,6 +199,8 @@ class ArchiveManager:
 
         :param src_path: Chemin complet vers le répertoire à archiver
         :param dest_zip: Nom du fichier de destination
+
+        :return: True si l'archive a été créée, False si elle était corrompue (elle n'est alors pas conservée)
         """
         zipPath = os.path.join(self.dossier, dest_zip)
         tmpPath = zipPath + ".tmp"      # l'extension .tmp est ignorée par get_most_recent_zip / get_all_zip
@@ -228,7 +230,10 @@ class ArchiveManager:
             with zipfile.ZipFile(tmpPath) as myzip:
                 mauvais = myzip.testzip()
             if mauvais is not None:
-                raise BadZipfile("Archive corrompue, fichier : " + mauvais)
+                texte = "Archive corrompue (fichier : %s), non conservée : %s" % (mauvais, zipPath)
+                logging.error(texte)
+                if DEBUG: print("ERREUR :", texte)
+                return False                    # le finally ci-dessous supprime le .tmp
 
             os.replace(tmpPath, zipPath)        # remplacement en une seule opération
         finally:

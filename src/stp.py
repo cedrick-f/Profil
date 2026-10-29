@@ -146,18 +146,18 @@ class Application(Frame):
     def update_status(self):
         x = self.process.queue.get()
         if x is None:
+            erreur = self.process.erreur
             self.process.join()
             self.process = None
-            self.statusWidget.update_status('100%')
+            self.statusWidget.update_status(erreur if erreur else '100%')
             for button in (self.actionSave.btn, self.actionRestore.btn):
                 button['state'] = 'normal'
         else:
-            self.statusWidget.update_status(x + '...')
+            # le message d'erreur est affiché tel quel, sans "..."
+            self.statusWidget.update_status(x if x == self.process.erreur else x + '...')
             self.master.after(150, self.update_status)
             for button in (self.actionSave.btn, self.actionRestore.btn):
                 button['state'] = 'disabled'
-
-
 
     def update_profileR(self, fichier_config: str):
 #         print("update_profileR_2", fichier_config)

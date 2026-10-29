@@ -23,5 +23,6 @@ msg = {
     """,
     'nom_ws' : "Emplacement de sauvegarde",
     'password' : "Mot de passe (laisser vide pour ne pas chiffrer)",
-    'auto_restore' : f"""<h1 style="color: red; text-align: center">STP</h1><p>Restauration automatique en cours ...</p><p>Patience !</p>"""
+    'auto_restore' : f"""<h1 style="color: red; text-align: center">STP</h1><p>Restauration automatique en cours ...</p><p>Patience !</p>""",
+    'zip_corrompu': "Erreur : l'archive créée est corrompue, elle n'a pas été enregistrée",
 }
