@@ -128,9 +128,11 @@ class Application(Frame):
 
     def handle_restore(self, password = ""):
         if self.profilConfigRest is not None:
-#             print("Restore :", self.profilConfigRest)
-            if hasattr(self, 'configR'):
-                self.profilConfigRest.set_config(self.configR.get_config())
+#           # En mode auto_restore, la méthode est appelée depuis __init__ :
+            # l'interface n'existe pas encore
+            interface = hasattr(self, 'actionRestore')
+            if interface:
+                self.actionRestore.config.set_config()
             self.process = RestoreProcess(self.manager, 
                                           self.profilConfigRest,
                                           self.fichier_config, 
@@ -138,9 +140,8 @@ class Application(Frame):
             logging.info('Retoring ...')
             self.process.start()
             self.process.join()
-            if hasattr(self, 'configR'):
+            if interface:
                 self.update_status()
-
 
     def update_status(self):
         x = self.process.queue.get()
