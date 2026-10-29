@@ -5,9 +5,9 @@ import setup
 msg = {
     'archive': 'Compression des dossiers',
     'title': f'Sauve Ton Profil - {setup.version}',
-    'save': 'Sauvegarder',
+    'save': '\U0001F4BE Sauvegarder',
     'saving': 'Sauvegarde',
-    'restore': 'Restaurer',
+    'restore': '\u21BA Restaurer',
     'restoring': 'Restauration',
     'browse': 'Parcourir',
     'zipping': 'Compression de l\'archive',
@@ -25,4 +25,6 @@ msg = {
     'password' : "Mot de passe (laisser vide pour ne pas chiffrer)",
     'auto_restore' : f"""<h1 style="color: red; text-align: center">STP</h1><p>Restauration automatique en cours ...</p><p>Patience !</p>""",
     'zip_corrompu': "Erreur : l'archive créée est corrompue, elle n'a pas été enregistrée",
+
+
 }
