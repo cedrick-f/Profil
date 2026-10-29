@@ -26,5 +26,6 @@ msg = {
     'auto_restore' : f"""<h1 style="color: red; text-align: center">STP</h1><p>Restauration automatique en cours ...</p><p>Patience !</p>""",
     'zip_corrompu': "Erreur : l'archive créée est corrompue, elle n'a pas été enregistrée",
 
-
+    'voir_mdp': '\U0001F441',            # œil : afficher / masquer le mot de passe
+    'voir_log': '\U0001F4C4 Journal',    # page : ouvrir le fichier stp.log
 }

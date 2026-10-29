@@ -14,7 +14,8 @@ from tkinter.filedialog import askdirectory
 from tkhtmlview import HTMLLabel
 from typing import Dict, Callable, List
 from gui.center_tk_window import *
-
+import os, subprocess
+from tkinter import messagebox
 
 ###############################################################################
 # Modules "application"
@@ -48,17 +49,36 @@ class ActionWidget(Frame):
 #################################################################################################
 class StatusWidget(Frame):
     """Interface pour afficher le status de la sauvegarde/restauration"""
-    def __init__(self, parent: Frame):
+    def __init__(self, parent: Frame, log_path: str):
         super().__init__(parent)
-       
+        self.log_path = log_path
+
         self.status = Label(self, text = '...')
-        self.lst_elem: List[ProfilElem] = []
-        self.status.grid(row=3, column=0, columnspan = 2, 
-                         sticky = "nsew")
-        self.columnconfigure(0, weight = 1)     # le texte est centré sur toute la largeur
+        self.status.grid(row = 0, column = 0, sticky = "nsew")
+
+        self.log_btn = Button(self, text = msg.get('voir_log'), command = self.handle_log_click)
+        self.log_btn.grid(row = 0, column = 1, padx = (5, 0), sticky = "ns")
+
+        self.columnconfigure(0, weight = 1)
+
 
     def update_status(self, text: str):
         self.status['text'] = text
+
+
+    def handle_log_click(self):
+        """Ouvre le fichier log avec l'application associée aux fichiers texte (Windows)."""
+        if not os.path.isfile(self.log_path):
+            messagebox.showwarning("Journal", "Fichier introuvable :\n" + self.log_path)
+            return
+        try:
+            os.startfile(self.log_path)                          # application associée aux .log
+        except OSError:
+            try:
+                subprocess.Popen(["notepad.exe", self.log_path])  # sinon : le Bloc-notes
+            except OSError as exc:
+                messagebox.showerror("Journal", "Impossible d'ouvrir le fichier :\n%s\n\n%s" % (self.log_path, exc))
+
 
 
 
@@ -67,18 +87,28 @@ class PasswordWidget(Frame):
     """Interface pour saisir un mot de passe"""
     def __init__(self, parent: Frame):
         super().__init__(parent)
-        
+
         l = Label(self, text = msg.get('password'), justify = 'left')
         l.grid(row=0, column=0, columnspan = 2, sticky="nw")
         self.psw = StringVar()
         self.pswd_widget = Entry(self, show="*", width = 15, textvariable = self.psw)
-        self.pswd_widget.grid(row=1, column=0, columnspan = 2, 
-                              sticky = "nsew")
+        self.pswd_widget.grid(row=1, column=0, sticky = "nsew")
+
+        # Bouton à bascule : enfoncé = mot de passe visible
+        self.visible = BooleanVar(value = False)
+        self.visible_btn = Checkbutton(self, text = msg.get('voir_mdp'),
+                                       variable = self.visible,
+                                       indicatoron = False,          # aspect d'un bouton
+                                       command = self.handle_visible)
+        self.visible_btn.grid(row=1, column=1, padx = (5, 0), sticky = "ns")
+
         self.columnconfigure(0, weight = 1)     # le champ s'étire avec la fenêtre
+
+    def handle_visible(self):
+        self.pswd_widget['show'] = '' if self.visible.get() else '*'
 
     def get_psw(self):
         return self.psw.get()
-
 
 
 

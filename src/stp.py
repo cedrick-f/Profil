@@ -37,7 +37,8 @@ from gui.center_tk_window import *
 
 
 import logging
-logging.basicConfig(filename = os.path.join(get_path_mesdocuments(), 'stp.log'), 
+LOG_FILE = os.path.join(get_path_mesdocuments(), 'stp.log')
+logging.basicConfig(filename = LOG_FILE, 
                     level=logging.DEBUG,
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
@@ -91,7 +92,7 @@ class Application(Frame):
         self.passwordWidget = PasswordWidget(self)
         self.passwordWidget.pack(padx = 5, pady = 5, fill = tkinter.X)
 
-        self.statusWidget = StatusWidget(self)
+        self.statusWidget = StatusWidget(self, LOG_FILE)
         self.statusWidget.pack(padx = 5, pady = 5, fill = tkinter.X)
 
         f = Frame(self)
