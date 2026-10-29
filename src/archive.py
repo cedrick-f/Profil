@@ -190,7 +190,7 @@ class ArchiveManager:
     
     
     ############################################################################
-    def to_zip(self, src_path: str, dest_zip: str, pwd = None) -> bool:
+    def to_zip(self, src_path: str, dest_zip: str, password = None) -> bool:
         """Archive un dossier dans un fichier .zip de destination.
 
         L'archive est d'abord écrite dans un fichier temporaire (.zip.tmp), vérifiée,
@@ -204,7 +204,7 @@ class ArchiveManager:
         """
         zipPath = os.path.join(self.dossier, dest_zip)
         tmpPath = zipPath + ".tmp"      # l'extension .tmp est ignorée par get_most_recent_zip / get_all_zip
-        if DEBUG: print("to_zip", pwd)
+        if DEBUG: print("to_zip", password)
         if DEBUG: print("     ", zipPath)
 
         # Fichiers temporaires laissés par un arrêt brutal précédent
@@ -217,8 +217,8 @@ class ArchiveManager:
         try:
             with open(tmpPath, 'wb') as fichier:
                 with zipfile.ZipFile(fichier, 'w') as myzip:
-                    if pwd is not None:
-                        myzip.setpassword(pwd)
+                    if password is not None:
+                        myzip.setpassword(password)
                     p = Path(src_path)
                     for f in p.rglob('*'):
                         if DEBUG: print(f)

@@ -67,10 +67,12 @@ class SaveProcess(Thread):
             else:
                 self.erreur = msg.get('zip_corrompu')
                 self.queue.put(self.erreur)
-                
+
         except Exception as e:
             logging.info('ERROR : '+ traceback.format_exc())
             if DEBUG: print('ERROR : '+ traceback.format_exc())
+            self.erreur = "Erreur : l'opération a échoué (voir stp.log)"
+            self.queue.put(self.erreur)
         finally:
             self.queue.put(None)
 
@@ -110,6 +112,8 @@ class RestoreProcess(SaveProcess):
         except Exception as e:
             logging.info('ERROR : '+ traceback.format_exc())
             if DEBUG: print('ERROR : '+ traceback.format_exc())
+            self.erreur = "Erreur : l'opération a échoué (voir stp.log)"
+            self.queue.put(self.erreur)
         finally:
             self.queue.put(None)
 
