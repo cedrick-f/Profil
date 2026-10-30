@@ -9,8 +9,8 @@
 #
 ################################################################################
 import os, sys, time
-from tkinter import Frame, Tk, messagebox, simpledialog
-
+from tkinter import Frame, Tk, simpledialog
+from gui import dialogues as messagebox
 
 # DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
 # DEBUG = False : lancé par le .exe          (cx_Freeze définit sys.frozen)
@@ -123,7 +123,7 @@ class Application(Frame):
                                        icon = "warning", default = "no"):
                 logging.info('Sauvegarde annulée : credentials sans mot de passe')
                 return
-                
+
         self.process = SaveProcess(self.manager, 
                                    self.profilConfigSave, 
                                    password)
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     if not auto_restore:
         root.title(msg.get('title'))
         root.geometry("")
-        root.iconbitmap(os.path.join(base_path, 'img','Icone_STP_v2.ico'))
+        root.iconbitmap(default = os.path.join(base_path, 'img','Icone_STP_v2.ico'))
         root.protocol("WM_DELETE_WINDOW", app.on_closing)
     else:
         logging.info('AutoRestore')

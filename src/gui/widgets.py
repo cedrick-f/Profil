@@ -15,7 +15,7 @@ from tkhtmlview import HTMLLabel
 from typing import Dict, Callable, List
 from gui.center_tk_window import *
 import os, subprocess
-from tkinter import messagebox
+from gui import dialogues as messagebox
 
 ###############################################################################
 # Modules "application"
