@@ -395,7 +395,11 @@ class ProfilElem(XMLMixin):
             return [self.path]
 
         for e in entrees:
-            _trace(logging.INFO, "Sauvé (credential) : " + e.target_name)    # le nom seulement
+            if len(e.blob) == 0:
+                _trace(logging.WARNING, "Credential SANS contenu (mot de passe vide ou non lu) : " + e.target_name)
+            else:
+                _trace(logging.INFO, "Sauvé (credential) : " + e.target_name)    # le nom seulement
+
         return []
 
 
