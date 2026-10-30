@@ -1,4 +1,4 @@
 pywin32
-pyminizip
+pyzipper
 tkhtmlview
 cx_freeze

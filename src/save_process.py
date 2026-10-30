@@ -23,7 +23,7 @@ DEBUG = not getattr(sys, "frozen", False)
 
 ###############################################################################
 # Modules "application"
-from archive import ArchiveManager
+from archive import ArchiveManager, MotDePasseError
 from contenu import ProfilConfig, PROFILS
 from messages import msg
 
@@ -63,7 +63,7 @@ class SaveProcess(Thread):
                 if DEBUG:
                     dossier_dezip = join(self.manager.dossier, splitext(filename)[0])
                     rmtree(dossier_dezip, ignore_errors=True)           # repartir d'un dossier vide
-                    self.manager.from_zip(filename, dossier_dezip)      # décompression de l'archive
+                    self.manager.from_zip(filename, dossier_dezip, self.password)      # décompression de l'archive
             else:
                 self.erreur = msg.get('zip_corrompu')
                 self.queue.put(self.erreur)
@@ -109,6 +109,13 @@ class RestoreProcess(SaveProcess):
 
             self.queue.put(msg.get('restoring'))
             self.profil_config.restaurer(temp.name)
+        
+        except MotDePasseError as e:
+            logging.error('Restauration impossible : ' + str(e))
+            if DEBUG: print('ERREUR :', e)
+            self.erreur = msg.get('mdp_incorrect')
+            self.queue.put(self.erreur)
+
         except Exception as e:
             logging.info('ERROR : '+ traceback.format_exc())
             if DEBUG: print('ERROR : '+ traceback.format_exc())

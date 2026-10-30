@@ -28,4 +28,12 @@ msg = {
 
     'voir_mdp': '\U0001F441',            # œil : afficher / masquer le mot de passe
     'voir_log': '\U0001F4C4 Journal',    # page : ouvrir le fichier stp.log
+    
+    'mdp_incorrect': "Erreur : mot de passe manquant ou incorrect, rien n'a été restauré",
+    'avert_titre': "Sauvegarde non chiffrée",
+    'avert_mode4': "Cette sauvegarde contient des identifiants Windows (mots de passe), "
+                   "mais aucun mot de passe n'est saisi : l'archive ne sera PAS chiffrée "
+                   "et ces identifiants seront lisibles par toute personne qui peut ouvrir le fichier.\n\n"
+                   "Pour la chiffrer, annulez et saisissez un mot de passe dans le champ prévu.\n\n"
+                   "Continuer sans chiffrement ?",
 }

@@ -67,7 +67,10 @@ class ProfilConfig(XMLMixin):
         return [g.nom for g in self.groups]
     
     
-    
+    ############################################################################
+    def contient_mode(self, mode: int) -> bool:
+        """True si au moins un élément de la configuration utilise ce mode de copie."""
+        return any(e.mode == mode for g in self.groups for e in g.lst_elem)
 
             
     ############################################################################

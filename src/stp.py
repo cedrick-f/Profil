@@ -110,11 +110,15 @@ class Application(Frame):
         self.process = None
         self.pack(fill=tkinter.X, expand=1)
         
-    
-    
-    def handle_save(self, password = ""):
-#         self.profilConfigSave.set_grps(self.configS.get_config())
+    def handle_save(self):
         self.actionSave.config.set_config()
+        password = self._get_password()
+        if not password and self.profilConfigSave.contient_mode(4):
+            # identifiants Windows sans chiffrement : on demande confirmation (réponse par défaut : Non)
+            if not messagebox.askyesno(msg.get('avert_titre'), msg.get('avert_mode4'),
+                                       icon = "warning", default = "no"):
+                logging.info('Sauvegarde annulée : credentials sans mot de passe')
+                return
         self.process = SaveProcess(self.manager, 
                                    self.profilConfigSave, 
                                    password)
@@ -124,22 +128,49 @@ class Application(Frame):
         self.update_status()
         self.workplace.update()
 
-    def handle_restore(self, password = ""):
+    def handle_restore(self):
         if self.profilConfigRest is not None:
-#           # En mode auto_restore, la méthode est appelée depuis __init__ :
-            # l'interface n'existe pas encore
             interface = hasattr(self, 'actionRestore')
             if interface:
                 self.actionRestore.config.set_config()
             self.process = RestoreProcess(self.manager, 
                                           self.profilConfigRest,
                                           self.fichier_config, 
-                                          password)
+                                          self._get_password())
             logging.info('Retoring ...')
             self.process.start()
             self.process.join()
             if interface:
-                self.update_status()
+                self.update_status()    
+    
+#     def handle_save(self, password = ""):
+# #         self.profilConfigSave.set_grps(self.configS.get_config())
+#         self.actionSave.config.set_config()
+#         self.process = SaveProcess(self.manager, 
+#                                    self.profilConfigSave, 
+#                                    password)
+#         logging.info('Saving ...')
+#         self.process.start()
+#         self.process.join()
+#         self.update_status()
+#         self.workplace.update()
+
+#     def handle_restore(self, password = ""):
+#         if self.profilConfigRest is not None:
+# #           # En mode auto_restore, la méthode est appelée depuis __init__ :
+#             # l'interface n'existe pas encore
+#             interface = hasattr(self, 'actionRestore')
+#             if interface:
+#                 self.actionRestore.config.set_config()
+#             self.process = RestoreProcess(self.manager, 
+#                                           self.profilConfigRest,
+#                                           self.fichier_config, 
+#                                           password)
+#             logging.info('Retoring ...')
+#             self.process.start()
+#             self.process.join()
+#             if interface:
+#                 self.update_status()
 
     def update_status(self):
         x = self.process.queue.get()
@@ -174,6 +205,10 @@ class Application(Frame):
             return
         root.destroy()
         
+    def _get_password(self) -> str:
+        """Mot de passe saisi ('' si l'interface n'existe pas encore : mode auto_restore)."""
+        return self.passwordWidget.get_psw() if hasattr(self, 'passwordWidget') else ""
+
 
 ######################################################################################
 if __name__ == '__main__':

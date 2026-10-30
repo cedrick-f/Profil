@@ -39,7 +39,7 @@ includefiles.extend([(os.path.join(base_path, 'img','Icone_STP_v2.ico'), os.path
 build_exe_options = {'build_exe': 'build/bin',
                      'include_msvcr': True,
                      'add_to_path': True,
-                     "packages": ['tkinter', 'tkhtmlview'],
+                     "packages": ['tkinter', 'tkhtmlview', 'pyzipper', 'Cryptodome'],
                      "optimize" : 1,
                      #"namespace_packages" : [],
                      "excludes": ['pydoc', 'doctest', 'lief', 'test', 'cx_freeze', 
