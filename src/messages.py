@@ -36,4 +36,8 @@ msg = {
                    "et ces identifiants seront lisibles par toute personne qui peut ouvrir le fichier.\n\n"
                    "Pour la chiffrer, annulez et saisissez un mot de passe dans le champ prévu.\n\n"
                    "Continuer sans chiffrement ?",
+    
+    'confirm_titre': "Confirmation du mot de passe",
+    'confirm_texte': "Saisissez à nouveau le mot de passe :",
+    'confirm_diff': "Les deux saisies sont différentes.\nLa sauvegarde n'a pas été effectuée.",
 }

@@ -9,7 +9,7 @@
 #
 ################################################################################
 import os, sys, time
-from tkinter import Frame, Tk, messagebox
+from tkinter import Frame, Tk, messagebox, simpledialog
 
 
 # DEBUG = True  : lancé par "python stp.py"  (mode test, tout est redirigé vers test/)
@@ -113,12 +113,17 @@ class Application(Frame):
     def handle_save(self):
         self.actionSave.config.set_config()
         password = self._get_password()
-        if not password and self.profilConfigSave.contient_mode(4):
+        if password:
+            if not self._confirmer_password(password):
+                logging.info('Sauvegarde annulée : mot de passe non confirmé')
+                return
+        elif self.profilConfigSave.contient_mode(4):
             # identifiants Windows sans chiffrement : on demande confirmation (réponse par défaut : Non)
             if not messagebox.askyesno(msg.get('avert_titre'), msg.get('avert_mode4'),
                                        icon = "warning", default = "no"):
                 logging.info('Sauvegarde annulée : credentials sans mot de passe')
                 return
+                
         self.process = SaveProcess(self.manager, 
                                    self.profilConfigSave, 
                                    password)
@@ -209,6 +214,18 @@ class Application(Frame):
         """Mot de passe saisi ('' si l'interface n'existe pas encore : mode auto_restore)."""
         return self.passwordWidget.get_psw() if hasattr(self, 'passwordWidget') else ""
 
+    def _confirmer_password(self, password: str) -> bool:
+        """Demande de saisir une seconde fois le mot de passe (fenêtre popup)."""
+        confirmation = simpledialog.askstring(msg.get('confirm_titre'), 
+                                              msg.get('confirm_texte'),
+                                              show = '*', 
+                                              parent = self)
+        if confirmation is None:        # bouton Annuler (ou fermeture de la fenêtre)
+            return False
+        if confirmation != password:
+            messagebox.showerror(msg.get('confirm_titre'), msg.get('confirm_diff'), parent = self)
+            return False
+        return True
 
 ######################################################################################
 if __name__ == '__main__':
