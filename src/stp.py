@@ -100,6 +100,7 @@ class Application(Frame):
         f.rowconfigure(0, weight = 1)                                # et de même hauteur
 
         self.actionSave = ActionWidget(f, self.handle_save, 'save', self.profilConfigSave)
+        self.actionSave.config.appliquer_defauts()      # groupes non cochés par défaut (voir contenu.py)
         self.actionSave.grid(row = 0, column = 0, sticky = "nsew", padx = 5, pady = 5)
 
         self.actionRestore = ActionWidget(f, self.handle_restore, 'restore', self.profilConfigRest)
@@ -147,35 +148,7 @@ class Application(Frame):
             self.process.join()
             if interface:
                 self.update_status()    
-    
-#     def handle_save(self, password = ""):
-# #         self.profilConfigSave.set_grps(self.configS.get_config())
-#         self.actionSave.config.set_config()
-#         self.process = SaveProcess(self.manager, 
-#                                    self.profilConfigSave, 
-#                                    password)
-#         logging.info('Saving ...')
-#         self.process.start()
-#         self.process.join()
-#         self.update_status()
-#         self.workplace.update()
 
-#     def handle_restore(self, password = ""):
-#         if self.profilConfigRest is not None:
-# #           # En mode auto_restore, la méthode est appelée depuis __init__ :
-#             # l'interface n'existe pas encore
-#             interface = hasattr(self, 'actionRestore')
-#             if interface:
-#                 self.actionRestore.config.set_config()
-#             self.process = RestoreProcess(self.manager, 
-#                                           self.profilConfigRest,
-#                                           self.fichier_config, 
-#                                           password)
-#             logging.info('Retoring ...')
-#             self.process.start()
-#             self.process.join()
-#             if interface:
-#                 self.update_status()
 
     def update_status(self):
         x = self.process.queue.get()

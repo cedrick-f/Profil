@@ -132,36 +132,20 @@ class ConfigWidget(Frame):
                                       command = lambda n=groupe.nom: self.manage_buttons(n))
             self.bool_vars[groupe.nom] = [bool_var, {}]
             self.chk_btn[groupe.nom] = [checkbutton, {}]
-            
-#             if groupe.nom in self.profilConfig.get_names():
-#                 checkbutton.configure(state='normal')
-#                 bool_var.set(True)
-#             else:
-#                 checkbutton.configure(state='disabled')
                
             checkbutton.pack(anchor = "w")
             
-            # Les éléments ...
-#             if len(groupe.lst_elem) > 1:
-#                 for elem in groupe.lst_elem:
-#                     bool_var = BooleanVar()
-#                     checkbutton = Checkbutton(self, text=elem.name, 
-#                                               variable=bool_var,
-#                                               command = lambda: self.manage_buttons(elem.name))
-#                     self.bool_vars[groupe.nom][1][elem.name] = bool_var
-#                     self.chk_btn[groupe.nom][1][elem.name] = checkbutton
-                    
-#                     #grp = self.profilConfig.get_group(groupe.nom)
-# #                     if grp is not None and elem.name in grp.get_names():
-# #                         checkbutton.configure(state='normal')
-# #                         bool_var.set(True)
-# #                     else:
-# #                         checkbutton.configure(state='disabled')
-                      
-#                     checkbutton.pack(anchor = "w", padx = (20, 0))
         self.update()
         
-        
+    
+    def appliquer_defauts(self):
+        """ Décoche les groupes déclarés avec coche_par_defaut = False (voir contenu.py).
+            La case reste active : l'utilisateur peut la cocher.
+        """
+        for groupe in PROFILS.groups:
+            if not groupe.coche_par_defaut:
+                self.bool_vars[groupe.nom][0].set(False)
+
     
     def manage_buttons(self, nom):
         for n, l in self.bool_vars.items():
@@ -175,13 +159,6 @@ class ConfigWidget(Frame):
                 elif not any(b.get() for b in d.values()):
                     bv.set(False)
         
-        
-#     def get_config(self) -> List[str]:
-#         profils: List[str] = []
-#         for key, var in self.bool_vars.items():
-#             if var.get():
-#                 profils.append(key)
-#         return profils
 
     def get_config(self) -> Dict[str, List[str]]:
         """ Renvoie les éléments à sauvegarder/restaurer

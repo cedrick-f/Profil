@@ -125,21 +125,31 @@ class ProfilConfig(XMLMixin):
 
 ################################################################################
 class ProfilGroup(XMLMixin):
-    """Un groupe de fichier 'profil' à sauvegarder."""
+    """ Un groupe de fichier 'profil' à sauvegarder.
+        :param nom: Nom du groupe
+        :param coche_par_defaut: False : la case du groupe n'est pas cochée par défaut
+                                 dans la colonne "Sauvegarder" (l'utilisateur peut la cocher)
 
-    def __init__(self, nom: str = ""):
+    """
+
+    def __init__(self, nom: str = "", coche_par_defaut: bool = True):
         super().__init__()
         self.nom = nom
         self.lst_elem: List[ProfilElem] = []
+        self._coche_par_defaut = coche_par_defaut   # "_" : pas enregistré dans config.xml
+
 
     ############################################################################
     def __repr__(self) -> str:
         return "ProfilGroup - "+self.nom+" :\n\t\t" + "\n\t\t".join(e.__repr__() for e in self.lst_elem)
 
+    @property
+    def coche_par_defaut(self) -> bool:
+        return self._coche_par_defaut
 
     ############################################################################
     def copie(self):
-        pg = ProfilGroup(self.nom)
+        pg = ProfilGroup(self.nom, self._coche_par_defaut)
         for e in self.lst_elem:
             pg.lst_elem.append(e.copie())
         return pg
@@ -725,7 +735,7 @@ if DEBUG:
     __TEST1.add_elem("local", 'LOCALAPPDATA', os.path.join("test3"), 1)
     __TEST1.add_elem("credentials", '', "STP_TEST_*", 4)
 
-    __TEST2 = ProfilGroup("__Test2")
+    __TEST2 = ProfilGroup("__Test2", coche_par_defaut = False)
     __TEST2.add_elem(".home", 'USERPROFILE', os.path.join(".__test0"), 2)
     __TEST2.add_elem("home", 'USERPROFILE', os.path.join("__test1"), 3)
     __TEST2.add_elem("roaming", 'APPDATA', os.path.join("__test2"), 1)
@@ -746,7 +756,7 @@ else:
             profile_path = profile.get(section, "Default").split('/')[-1]
             break
 
-    __FF = ProfilGroup("FireFox")
+    __FF = ProfilGroup("FireFox", coche_par_defaut = False)
     __FF.add_elem("Roaming", 'APPDATA', os.path.join('Mozilla','Firefox', 'Profiles', profile_path), 1)
     __FF.add_elem("Local", 'LOCALAPPDATA', os.path.join('Mozilla','Firefox', 'Profiles', profile_path), 1)
     __FF.add_elem("profiles.ini", 'APPDATA', os.path.join('Mozilla','Firefox','*profiles.ini'), 2)
@@ -763,7 +773,7 @@ else:
     __STRT = ProfilGroup("Menu Démarrer")
     __STRT.add_elem("", 'APPDATA', os.path.join("Microsoft", "Internet Explorer", "Quick Launch", "User Pinned", "StartMenu", "*.lnk"), 3)
     
-    __GD = ProfilGroup("GitHub Desktop")
+    __GD = ProfilGroup("GitHub Desktop", coche_par_defaut = False)
     __GD.add_elem("Roaming", 'APPDATA', os.path.join('GitHub Desktop'), 1)
     __GD.add_elem("Local", 'LOCALAPPDATA', os.path.join('GitHub Desktop'), 1)
     
@@ -774,41 +784,44 @@ else:
     __PYT = ProfilGroup("Python")
     __PYT.add_elem("Local", 'LOCALAPPDATA', os.path.join('Programs', 'Python'), 1)
     
-    __VEY = ProfilGroup("Veyon")
+    __VEY = ProfilGroup("Veyon", coche_par_defaut = False)
     __VEY.add_elem("Roaming", 'APPDATA', os.path.join('veyon'), 1)
     
     # __VSC = ProfilGroup("Visual Studio Code")
     # __VSC.add_elem("Settings", 'APPDATA', os.path.join('Code','User'), 1)
     # __VSC.add_elem("Extensions", 'USERPROFILE', os.path.join('.vscode.','extensions'), 1) #%USERPROFILE%\.vscode\extensions
     
-    __COD = ProfilGroup("VSCodium")
+    __COD = ProfilGroup("VSCodium", coche_par_defaut = False)
     __COD.add_elem("Local", 'LOCALAPPDATA', os.path.join('Programs','VSCodium'), 1)
     __COD.add_elem("Roaming", 'APPDATA', os.path.join('VSCodium'), 1)
     __COD.add_elem("Extensions", 'USERPROFILE', os.path.join('.vscode-oss'), 1)
     
-    __GIT = ProfilGroup("Git")
+    __GIT = ProfilGroup("Git", coche_par_defaut = False)
     __GIT.add_elem("Config", 'USERPROFILE', os.path.join(".gitconfig."), 2)
     __GIT.add_elem("Credentials", 'USERPROFILE', os.path.join(".git-credentials."), 2)
     
-    __SSH = ProfilGroup("Clés SSH")
+    __SSH = ProfilGroup("Clés SSH", coche_par_defaut = False)
     __SSH.add_elem("", 'USERPROFILE', os.path.join(".ssh."), 1)
 
-    __NXT = ProfilGroup("NextCloud")
+    __NXT = ProfilGroup("NextCloud", coche_par_defaut = False)
     __NXT.add_elem("Roaming", 'APPDATA', os.path.join('Nextcloud'), 1)
     __NXT.add_elem("Local", 'LOCALAPPDATA', os.path.join('Nextcloud'), 1)
 
-    #PROFILS.add_grp(__FF)
+    #
     PROFILS.add_grp(__BUR)
-    PROFILS.add_grp(__NXT)
-    PROFILS.add_grp(__GD)
-    PROFILS.add_grp(__PYZ)
-    PROFILS.add_grp(__VEY)
     PROFILS.add_grp(__TSK)
     PROFILS.add_grp(__STRT)
-    PROFILS.add_grp(__GIT)
     PROFILS.add_grp(__SSH)
     PROFILS.add_grp(__PYT)
-    #PROFILS.add_grp(__COD)
+    PROFILS.add_grp(__PYZ)
+    PROFILS.add_grp(__GIT)
+    PROFILS.add_grp(__GD)
+    PROFILS.add_grp(__COD)
+    
+    PROFILS.add_grp(__VEY)
+    PROFILS.add_grp(__FF)
+    PROFILS.add_grp(__NXT)
+    
 
 
 
