@@ -1,4 +1,3 @@
 pywin32
 pyzipper
-tkhtmlview
 cx_freeze

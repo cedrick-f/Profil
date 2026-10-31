@@ -11,7 +11,7 @@
 from tkinter import Button, Checkbutton, Entry, Frame, StringVar, BooleanVar, \
                     Label, Toplevel, ttk
 from tkinter.filedialog import askdirectory
-from tkhtmlview import HTMLLabel
+from tkinter import font as tkfont
 from typing import Dict, Callable, List
 from gui.center_tk_window import *
 import os, subprocess
@@ -324,18 +324,24 @@ class WorkplaceWidget(Frame):
 
 
 
-#################################################################################################
 class Splash(Toplevel):
+    """Fenêtre d'accueil sans bordure. Texte simple : plus besoin de tkhtmlview (ni de Pillow, requests...)."""
     def __init__(self, parent, mess = 'avertissement', **kargs):
         Toplevel.__init__(self, parent)
-        
-        T = HTMLLabel(self, html = msg.get(mess))
-        T.grid()
-        T.fit_height()
+        m = msg.get(mess)                       # {'titre', 'texte' (liste de paragraphes), 'taille', 'couleur', 'centre'}
+        centre = m.get('centre', False)
+        ancre, justif = ("center", "center") if centre else ("w", "left")
+
+        police = tkfont.nametofont("TkDefaultFont").copy()
+        police.configure(size = m.get('taille', 14), weight = "bold")
+
+        cadre = Frame(self, borderwidth = 2, relief = "ridge", padx = 15, pady = 10)
+        cadre.pack()
+        Label(cadre, text = m['titre'], font = police, fg = m.get('couleur', 'black')).pack(anchor = ancre, pady = (0, 8))
+        for paragraphe in m['texte']:
+            Label(cadre, text = paragraphe, wraplength = 380, justify = justif).pack(anchor = ancre, pady = 3)
+
         center_on_screen(self)
         self.overrideredirect(1)
         self.update()
-
-        
-    
 
