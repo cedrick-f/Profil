@@ -76,7 +76,7 @@ def supprimer(racine, nomFichier, parent = "", niveau = 0):
         os.remove(abspath)
         print(abspath)
 
-        
+
 def supprimer_doublons_dll(racine = 'build/bin'):
     """Supprime de lib/ les DLL identiques (octet pour octet) à celles déjà à côté de l'exécutable."""
     import hashlib
@@ -117,4 +117,5 @@ if __name__ == '__main__':
     
     supprimer('build/bin/lib', 'python38.dll')
     supprimer('build/bin/lib', 'VCRUNTIME140.dll')
+    supprimer_doublons_dll('build/bin')
             
