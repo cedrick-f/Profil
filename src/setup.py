@@ -46,8 +46,7 @@ build_exe_options = {'build_exe': 'build/bin',
                      #"namespace_packages" : [],
                      "excludes": ['pydoc', 'doctest', 'lief', 'test', 'cx_Freeze',
                                   'unittest', 'pydoc_data', 'idlelib', 'lib2to3', 'turtledemo',  # outils de développement
-                                  'Cryptodome.SelfTest', 'Cryptodome.PublicKey',
-                                  'Cryptodome.Signature', 'Cryptodome.IO',                       # inutiles pour l'AES
+                                  'Cryptodome.SelfTest',                       # inutiles pour l'AES
                                   ],
                      "include_files": includefiles,
                      "bin_path_includes": [],
