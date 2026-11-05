@@ -36,7 +36,7 @@ LONGUEUR_PREFIXE_CREDENTIAL = 4             # mode 4 : au moins 4 caractères av
 # Clé PUBLIQUE de l'administrateur (Ed25519). Elle n'est pas secrète.
 # À remplacer par celle affichée par :  python outil_profils.py genkey
 CLE_PUBLIQUE = """-----BEGIN PUBLIC KEY-----
-A_REMPLACER
+MCowBQYDK2VwAyEAbgVWdKjX8LAEHCYrxGCWtycAeKnNsvl+gqOQogHDyz4=
 -----END PUBLIC KEY-----"""
 
 

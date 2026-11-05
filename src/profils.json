@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "groupes": [
+    {"nom": "Moodle", "coche_par_defaut": false,
+     "elements": [
+       {"nom": "Roaming", "env": "APPDATA", "chemin": "Moodle", "mode": 1},
+       {"nom": "cred", "chemin": "Moodle_*", "mode": 4}
+     ]}
+  ]
+}

@@ -33,7 +33,7 @@ CREDENTIAL_PREFIXE_TEST = "STP_TEST_"       # en DEBUG, seules les credentials d
 # Modules "application"
 from structure import *
 from windows_credential_manager import list_credentials, write_credential, CRED_PERSIST_LOCAL_MACHINE
-
+import profils_externes
 
 
 
@@ -822,7 +822,16 @@ else:
     PROFILS.add_grp(__FF)
     PROFILS.add_grp(__NXT)
     
-
+################################################################################
+# Groupes supplémentaires (ou de remplacement, à nom identique) définis par un fichier
+# externe SIGNÉ, placé à côté de l'application : voir profils_externes.py
+for _g in profils_externes.charger(os.path.dirname(os.path.abspath(sys.argv[0])),
+                                   signature_obligatoire = not DEBUG) or []:
+    _pg = ProfilGroup(_g["nom"], _g["coche_par_defaut"])
+    for _e in _g["elements"]:
+        _pg.add_elem(_e["nom"], _e["env"], _e["chemin"], _e["mode"])
+    PROFILS.groups = [x for x in PROFILS.groups if x.nom != _pg.nom]
+    PROFILS.add_grp(_pg)
 
 
 ################################################################################
